@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\StudentManagement",
+    "\\StudentManagement\\Controllers",
+    "\\StudentManagement\\Services",
+    "\\StudentManagement\\Services\\Interfaces"
+  ],
+  "SelectedNode": "\\StudentManagement\\Services\\Interfaces\\IAuthService.cs",
+  "PreviewInSolutionExplorer": false
+}

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section { margin-bottom: 30px; }
+        .message { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        button { padding: 6px 12px; margin: 3px; cursor: pointer; }
+        select, input { padding: 6px; margin: 5px; }
+        #loading { display: none; color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+
+    <button onclick="logout()">Logout</button>
+
+    <hr>
+
+    <!-- Phần Tạo User -->
+    <div class="section">
+        <h2>Tạo User Mới</h2>
+        <input id="newUsername" placeholder="Username" />
+        <input id="newEmail" placeholder="Email" type="email" />
+        <input id="newPassword" type="password" placeholder="Password" />
+
+        <select id="newRole">
+            <option value="Student">Student</option>
+            <option value="Teacher">Teacher</option>
+            <option value="Admin">Admin</option>
+        </select>
+
+        <button onclick="createUser()">Tạo User</button>
+        <p id="createMessage" class="message"></p>
+    </div>
+
+    <hr>
+
+    <!-- Phần Danh sách User & Quản lý Role -->
+    <div class="section">
+        <h2>Danh sách User</h2>
+        <button onclick="loadUsers()">Tải lại danh sách</button>
+        <span id="loading">Đang tải...</span>
+
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role hiện tại</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+        </table>
+
+        <p id="listMessage" class="error"></p>
+    </div>
+
+    <hr>
+
+    <!-- Phần Quản lý Lớp -->
+    <div class="section">
+        <h2>Quản lý Lớp</h2>
+        <button onclick="loadClasses()">Tải danh sách lớp</button>
+        <button onclick="showCreateForm()">Tạo lớp mới</button>
+        <div id="createClassContainer" style="margin-top:10px; display:none;">
+            <input id="newClassName" placeholder="Tên lớp" />
+            <input id="newClassCode" placeholder="Mã lớp" />
+            <input id="newClassSchedule" placeholder="Lịch" />
+            <input id="newClassTeacherId" placeholder="TeacherId (optional)" />
+            <button onclick="createClass()">Tạo</button>
+            <button onclick="hideCreateForm()">Hủy</button>
+            <div id="createClassMsg" style="color:green"></div>
+        </div>
+        <table id="classesTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên</th>
+                    <th>Mã</th>
+                    <th>Giáo viên</th>
+                    <th>Lịch</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="classesBody"></tbody>
+        </table>
+        <div id="classMessage" class="message"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        const baseUrl = "http://127.0.0.1:5187/api/admin";
+
+        // Chặn nếu không phải Admin
+        if (role !== "Admin") {
+            alert("Bạn không có quyền vào đây.");
+            window.location.href = "login.html";
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("username");
+            window.location.href = "login.html";
+        }
+
+        // ✅ Fix: đọc và gửi email lên backend
+        async function createUser() {
+            const username = document.getElementById("newUsername").value.trim();
+            const email    = document.getElementById("newEmail").value.trim();    // ✅ Thêm
+            const password = document.getElementById("newPassword").value;
+            const role     = document.getElementById("newRole").value;
+
+            if (!username || !email || !password) {                               // ✅ Check email
+                document.getElementById("createMessage").innerText = "Vui lòng nhập đầy đủ thông tin";
+                document.getElementById("createMessage").className = "error";
+                return;
+            }
+
+            document.getElementById("createMessage").innerText = "Đang tạo...";
+            document.getElementById("createMessage").className = "";
+
+            try {
+                const response = await fetch(`${baseUrl}/create-user`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ username, email, password, role })     // ✅ Gửi email
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    document.getElementById("createMessage").innerText = "Tạo user thành công!";
+                    document.getElementById("createMessage").className = "message";
+                    // ✅ Clear form sau khi tạo thành công
+                    document.getElementById("newUsername").value = "";
+                    document.getElementById("newEmail").value    = "";
+                    document.getElementById("newPassword").value = "";
+                    loadUsers();
+                } else {
+                    document.getElementById("createMessage").innerText = "Lỗi: " + text;
+                    document.getElementById("createMessage").className = "error";
+                }
+            } catch (err) {
+                document.getElementById("createMessage").innerText = "Lỗi kết nối: " + err.message;
+                document.getElementById("createMessage").className = "error";
+            }
+        }
+
+        // Tải danh sách user
+        async function loadUsers() {
+            document.getElementById("loading").style.display = "inline";
+            document.getElementById("listMessage").innerText = "";
+
+            try {
+                const response = await fetch(`${baseUrl}/users`, {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const users = await response.json();
+                const tbody = document.getElementById("usersBody");
+                tbody.innerHTML = "";
+
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${user.Id || user.id || '-'}</td>
+                        <td>${user.UserName || user.userName || '-'}</td>
+                        <td>${user.Email || user.email || '-'}</td>
+                        <td>${user.Role || user.role || "Chưa có role"}</td>
+                        <td>
+                            <select id="roleSelect_${user.Id || user.id}">
+                                <option value="Student" ${user.Role === "Student" || user.role === "Student" ? "selected" : ""}>Student</option>
+                                <option value="Teacher" ${user.Role === "Teacher" || user.role === "Teacher" ? "selected" : ""}>Teacher</option>
+                                <option value="Admin" ${user.Role === "Admin" || user.role === "Admin" ? "selected" : ""}>Admin</option>
+                            </select>
+                            <button onclick="changeRole('${user.Id || user.id}')">Cập nhật Role</button>
+                            <button onclick="deleteUser('${user.Id || user.id}', '${user.UserName || user.userName || 'người dùng này'}')">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                document.getElementById("listMessage").innerText = "Lỗi tải danh sách: " + err.message;
+            } finally {
+                document.getElementById("loading").style.display = "none";
+            }
+        }
+
+        // Thay đổi role cho user
+        async function changeRole(userId) {
+            const select = document.getElementById(`roleSelect_${userId}`);
+            const newRole = select.value;
+
+            if (!confirm(`Xác nhận thay đổi role của user này thành "${newRole}"?`)) return;
+
+            try {
+                const response = await fetch(`${baseUrl}/users/${userId}/assign-role`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify({ roleName: newRole })
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    alert("Cập nhật role thành công!");
+                    loadUsers();
+                } else {
+                    alert("Lỗi: " + text);
+                }
+            } catch (err) {
+                alert("Lỗi kết nối: " + err.message);
+            }
+        }
+
+        // Xóa user
+        async function deleteUser(userId, username) {
+            if (!confirm(`Bạn chắc chắn muốn xóa user "${username}"? Hành động này không thể hoàn tác!`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/users/${userId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    alert(`Đã xóa user "${username}" thành công!`);
+                    loadUsers();
+                } else {
+                    alert("Lỗi khi xóa: " + text);
+                }
+            } catch (err) {
+                alert("Lỗi kết nối khi xóa: " + err.message);
+            }
+        }
+
+        // Tự động tải danh sách khi mở trang
+        window.onload = async () => {
+            await loadUsers();
+            await loadClasses();
+        };
+        
+        // ===== Quản lý lớp =====
+        async function loadClasses() {
+            try {
+                const res = await fetch(`${baseUrl}/classes`, { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) throw new Error(await res.text());
+                const classes = await res.json();
+                const tbody = document.getElementById('classesBody');
+                tbody.innerHTML = '';
+
+                // Load users and teachers for select
+                const usersRes = await fetch(`${baseUrl}/users`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const users = await usersRes.json();
+                const teachers = users.filter(u => (u.Role || u.role) === 'Teacher');
+
+                classes.forEach(raw => {
+                    // support both PascalCase (C#) and camelCase (JS) property names
+                    const cls = {
+                        id: raw.Id ?? raw.id,
+                        name: raw.Name ?? raw.name,
+                        code: raw.Code ?? raw.code,
+                        schedule: raw.Schedule ?? raw.schedule,
+                        startDate: raw.StartDate ?? raw.startDate,
+                        teacherId: raw.TeacherId ?? raw.teacherId,
+                    };
+
+                    const row = document.createElement('tr');
+                    // If the class has a TeacherId who is not currently in the Teacher role list,
+                    // include that user as an option so the UI shows the assigned teacher instead of "(Chưa có)".
+                    const assignedUser = users.find(u => (u.Id ?? u.id) == cls.teacherId);
+
+                    const teacherOptionsArr = ['<option value="">(Chưa có)</option>'];
+                    if (assignedUser) {
+                        const atid = assignedUser.Id ?? assignedUser.id;
+                        const auname = assignedUser.UserName ?? assignedUser.userName ?? atid;
+                        // only add if not already in teachers list
+                        if (!teachers.some(t => (t.Id ?? t.id) == atid)) {
+                            teacherOptionsArr.push(`<option value="${atid}" selected>${auname} (assigned)</option>`);
+                        }
+                    }
+
+                    const teacherOptions = teacherOptionsArr
+                        .concat(teachers.map(t => {
+                            const tid = t.Id ?? t.id;
+                            const uname = t.UserName ?? t.userName ?? tid;
+                            return `<option value="${tid}" ${tid == cls.teacherId ? 'selected' : ''}>${uname}</option>`;
+                        }))
+                        .join('');
+
+                    row.innerHTML = `
+                        <td>${cls.id}</td>
+                        <td>${cls.name}</td>
+                        <td>${cls.code}</td>
+                        <td>
+                            <select id="teacherSelect_${cls.id}">${teacherOptions}</select>
+                            <button onclick="assignTeacher(${cls.id})">Gán</button>
+                        </td>
+                        <td>
+                            <input id="scheduleInput_${cls.id}" value="${cls.schedule || ''}" style="width:300px" />
+                            <button onclick="updateSchedule(${cls.id})">Cập nhật</button>
+                            <button onclick="viewStudents(${cls.id})">Xem SV</button>
+                        </td>
+                        <td id="actions_${cls.id}"></td>
+                        <td><button onclick="deleteClass(${cls.id})">Xóa lớp</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                document.getElementById('classMessage').innerText = 'Lỗi tải lớp: ' + err.message;
+            }
+        }
+
+        function showCreateForm(){
+            document.getElementById('createClassContainer').style.display = 'block';
+        }
+        function hideCreateForm(){
+            document.getElementById('createClassContainer').style.display = 'none';
+        }
+
+        async function createClass(){
+            const name = document.getElementById('newClassName').value.trim();
+            const code = document.getElementById('newClassCode').value.trim().toUpperCase();
+            const schedule = document.getElementById('newClassSchedule').value.trim();
+            const teacherId = document.getElementById('newClassTeacherId').value.trim() || null;
+            if(!name || !code) { document.getElementById('createClassMsg').innerText = 'Nhập tên và mã lớp'; return; }
+            try{
+                const res = await fetch(`${baseUrl}/classes`, {
+                    method: 'POST', headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+                    body: JSON.stringify({ name, code, schedule, teacherId })
+                });
+                const txt = await res.text();
+                if(!res.ok) throw new Error(txt);
+                document.getElementById('createClassMsg').innerText = 'Tạo lớp thành công';
+                hideCreateForm(); loadClasses();
+            }catch(e){ alert('Lỗi: '+e.message); }
+        }
+
+        async function deleteClass(classId){
+            if(!confirm('Xác nhận xóa lớp này?')) return;
+            try{
+                const res = await fetch(`${baseUrl}/classes/${classId}`, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
+                const txt = await res.text();
+                if(!res.ok) throw new Error(txt);
+                alert('Đã xóa lớp'); loadClasses();
+            }catch(e){ alert('Lỗi: '+e.message); }
+        }
+
+        async function assignTeacher(classId) {
+            const select = document.getElementById(`teacherSelect_${classId}`);
+            const teacherId = select.value;
+
+            if (!teacherId) {
+                alert('Vui lòng chọn giáo viên hợp lệ trước khi gán');
+                return;
+            }
+
+            try {
+                const payload = { TeacherId: teacherId };
+                const res = await fetch(`${baseUrl}/classes/${classId}/assign-teacher`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error(await res.text());
+                alert('Gán giáo viên thành công');
+                loadClasses();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        }
+
+        async function updateSchedule(classId) {
+            const input = document.getElementById(`scheduleInput_${classId}`);
+            const schedule = input.value;
+            try {
+                const res = await fetch(`http://localhost:5187/api/admin/classes/${classId}/schedule`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ schedule })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                alert('Cập nhật lịch thành công');
+                loadClasses();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        }
+
+        async function viewStudents(classId) {
+            try {
+                const res = await fetch(`http://localhost:5187/api/admin/classes/${classId}/students`, { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                const actions = document.getElementById(`actions_${classId}`);
+                actions.innerHTML = `<div style="max-width:400px;"><strong>Học sinh:</strong><br>` +
+                    data.students.map(s => `
+                        <div style="margin:6px 0">
+                            ${s.studentName} (${s.email || '-'}) - ${s.status}
+                            <button onclick="removeStudent(${s.enrollmentId}, ${classId})">Xóa</button>
+                        </div>
+                    `).join('') + `</div>`;
+            } catch (err) {
+                alert('Lỗi tải sinh viên: ' + err.message);
+            }
+        }
+
+        async function removeStudent(enrollmentId, classId) {
+            if (!confirm('Xác nhận xóa sinh viên khỏi lớp?')) return;
+            try {
+                const res = await fetch(`http://localhost:5187/api/admin/enrollments/${enrollmentId}`, {
+                    method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) throw new Error(await res.text());
+                alert('Đã xóa');
+                viewStudents(classId);
+                loadClasses();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

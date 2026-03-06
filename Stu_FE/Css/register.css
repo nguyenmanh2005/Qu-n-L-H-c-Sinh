@@ -1,0 +1,855 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            cursor: url('chuot.png'), url('../chuot.png'), auto !important;
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Particles Background */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Floating Emojis */
+        .floating-emoji {
+            position: absolute;
+            font-size: 24px;
+            animation: floatEmoji 15s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes floatEmoji {
+            0%, 100% {
+                transform: translateY(100vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container */
+        .auth-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .landing-banner {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 16px 22px;
+            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            color: #fff;
+            cursor: url('img/tay.png'), url('../img/tay.png'), pointer !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .landing-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .landing-banner span {
+            font-weight: 600;
+        }
+
+        /* Logo Animation */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: bounceIn 1s ease;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateY(-50px);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite ease-in-out, rotate 20s linear infinite;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            animation-play-state: paused;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+            50% {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 20px rgba(255, 255, 255, 0);
+            }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Register Card */
+.register-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 30px;
+    padding: 50px 40px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    animation: slideUp 0.8s ease;
+    position: relative;
+    overflow: hidden;
+
+    margin: 0 auto;   /* 👈 thêm dòng này */
+}
+
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Title */
+        .register-title {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .register-title h1 {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: none;
+        }
+
+        .register-title p {
+            color: #666;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* Form Group */
+        .form-group {
+            position: relative;
+            margin-bottom: 25px;
+            animation: fadeIn 1s ease;
+            animation-fill-mode: both;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #999;
+            transition: color 0.3s ease;
+            z-index: 2;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 18px 16px 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            cursor: text !important;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group input:focus ~ .input-icon,
+        .form-group input:not(:placeholder-shown) ~ .input-icon {
+            color: #667eea;
+        }
+
+        /* Input Validation */
+        .form-group input.valid {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.05);
+        }
+
+        .form-group input.valid + .input-icon {
+            color: #2ecc71;
+        }
+
+        .form-group input.invalid {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.05);
+            animation: shake 0.5s ease;
+        }
+
+        .form-group input.invalid + .input-icon {
+            color: #e74c3c;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Validation Message */
+        .validation-message {
+            margin-top: 5px;
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .validation-message.show {
+            display: block;
+        }
+
+        .validation-message.success {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left: 3px solid #2ecc71;
+        }
+
+        .validation-message.error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+            border-left: 3px solid #e74c3c;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            position: absolute;
+            right: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #667eea;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Password Strength with Emoji */
+        .password-strength {
+            margin-top: 8px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+            position: relative;
+        }
+
+        .password-strength.show {
+            display: block;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background 0.3s ease;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+
+        .password-strength-emoji {
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength-bar.weak .password-strength-emoji::after {
+            content: '😰';
+        }
+
+        .password-strength-bar.medium .password-strength-emoji::after {
+            content: '😊';
+        }
+
+        .password-strength-bar.strong .password-strength-emoji::after {
+            content: '🔥';
+        }
+
+        /* Password Tips */
+        .password-tips {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            display: none;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .password-tips.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .password-tips ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .password-tips li {
+            margin: 5px 0;
+        }
+
+        /* Shake Error Animation */
+        .shake-error {
+            animation: shakeCard 0.5s ease;
+        }
+
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px) rotate(-1deg); }
+            20%, 40%, 60%, 80% { transform: translateX(10px) rotate(1deg); }
+        }
+
+        /* Success Celebration */
+        .celebration-emoji {
+            position: absolute;
+            font-size: 40px;
+            animation: celebrate 2s ease forwards;
+        }
+
+        @keyframes celebrate {
+            0% {
+                opacity: 1;
+                transform: translateY(50vh) scale(0) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(30vh) scale(1.5) rotate(180deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(10vh) scale(0.5) rotate(360deg);
+            }
+        }
+
+
+        /* Password Toggle */
+        .password-toggle {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: url('img/tay.png'), url('../img/tay.png'), pointer !important;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 2;
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-50%) scale(1.1) rotate(5deg);
+        }
+
+        .password-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Eye animation when hiding password */
+        .password-toggle .eye-icon {
+            display: inline-block;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .password-toggle .eye-icon.hidden {
+            animation: eyeBlink 0.5s ease;
+        }
+
+        .password-toggle .eye-icon.visible {
+            animation: eyeOpen 0.5s ease;
+        }
+
+        @keyframes eyeBlink {
+            0% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+            100% { transform: scaleY(1); }
+        }
+
+        @keyframes eyeOpen {
+            0% { transform: scaleY(0.1); opacity: 0.5; }
+            50% { transform: scaleY(1.2); }
+            100% { transform: scaleY(1); opacity: 1; }
+        }
+
+        /* Hand covering eye animation */
+        .password-toggle .hand-cover {
+            position: absolute;
+            font-size: 22px;
+            opacity: 0;
+            transform: translateX(-15px) scale(0) rotate(-10deg);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .password-toggle.password-hidden .hand-cover {
+            opacity: 1;
+            transform: translateX(0) scale(1) rotate(0deg);
+            animation: handCoverEye 0.6s ease;
+        }
+
+        @keyframes handCoverEye {
+            0% {
+                transform: translateX(-15px) scale(0.5) rotate(-20deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translateX(2px) scale(1.1) rotate(5deg);
+            }
+            100% {
+                transform: translateX(0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .password-toggle.password-visible .hand-cover {
+            animation: handMoveAway 0.5s ease forwards;
+        }
+
+        @keyframes handMoveAway {
+            0% {
+                transform: translateX(0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(15px) scale(0) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        .password-toggle.password-visible .eye-icon {
+            opacity: 1;
+        }
+
+        .password-toggle.password-hidden .eye-icon {
+            opacity: 0.4;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: url('img/tay.png'), url('../img/tay.png'), pointer !important;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .submit-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed !important;
+            transform: none;
+        }
+
+        .submit-btn .btn-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .submit-btn .btn-loader {
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        .submit-btn.loading .btn-loader {
+            display: inline-block;
+        }
+
+        /* Login Link */
+        .login-link {
+            text-align: center;
+            margin-top: 30px;
+            animation: fadeInUp 0.8s ease;
+            animation-delay: 0.4s;
+            animation-fill-mode: both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-link p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: url('img/tay.png'), url('../img/tay.png'), pointer !important;
+        }
+
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+            transform: translateX(5px);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            animation: fadeIn 1s ease;
+            animation-delay: 0.6s;
+            animation-fill-mode: both;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear forwards;
+            z-index: 9999;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Success Animation */
+        @keyframes successPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .register-card {
+                padding: 40px 25px;
+                border-radius: 20px;
+            }
+
+            .register-title h1 {
+                font-size: 28px;
+            }
+
+            .logo {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        /* Cursor fix */
+        * {
+            cursor: inherit;
+        }
+
+        button, a, input[type="button"], input[type="submit"], label, select {
+            cursor: url('img/tay.png'), url('../img/tay.png'), pointer !important;
+        }
+
+        input[type="text"], input[type="email"], input[type="password"] {
+            cursor: text !important;
+        }

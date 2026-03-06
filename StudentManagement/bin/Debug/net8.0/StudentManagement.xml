@@ -1,0 +1,185 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>StudentManagement</name>
+    </assembly>
+    <members>
+        <member name="M:StudentManagement.Controllers.AdminController.GetSlots">
+            <summary>
+            Trả về danh sách 7 slot học cố định.
+            Frontend dùng endpoint này để hiển thị dropdown chọn slot.
+            </summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.AdminController.UpdateSchedule(System.Int32,StudentManagement.DTOs.UpdateScheduleDto,StudentManagement.Data.AppDbContext)">
+            <summary>
+            Cập nhật lịch học cho lớp.
+            Admin có thể truyền SlotNumber (1–7) thay vì nhập giờ thủ công.
+            Ví dụ body: { "slotNumber": 2, "schedule": "Thứ 2, Thứ 4 – P.A101", "startDate": "2025-09-01" }
+            </summary>
+        </member>
+        <member name="T:StudentManagement.Controllers.StudentController">
+            <summary>
+            API dành cho học sinh (role = Student).
+            Controller này KHÔNG chứa business logic – tất cả ủy quyền cho IStudentService.
+            </summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetProfile">
+            <summary>Lấy thông tin cá nhân của học sinh đang đăng nhập.</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetMyClasses">
+            <summary>Danh sách lớp học đang tham gia (mọi trạng thái).</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetClassMembers(System.Int32)">
+            <summary>Xem danh sách thành viên và giáo viên của lớp (chỉ khi đã được duyệt).</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.JoinClass(StudentManagement.DTOs.JoinClassRequestDto)">
+            <summary>Gửi yêu cầu tham gia lớp bằng mã lớp.</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetMySchedule">
+            <summary>Lịch học của học sinh – chỉ trả về lớp đã được duyệt (Approved).</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetMyAttendance">
+            <summary>Toàn bộ lịch sử điểm danh của học sinh.</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.GetAttendanceSummary">
+            <summary>Tổng hợp chuyên cần theo từng lớp (có tỉ lệ %).</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.RequestRestore(StudentManagement.DTOs.RestoreAttendanceDto)">
+            <summary>Gửi đơn khôi phục điểm danh theo AttendanceId.</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.RequestRestoreByInfo(StudentManagement.DTOs.RestoreAttendanceByInfoDto)">
+            <summary>Gửi đơn khôi phục theo ClassId + Date (không cần AttendanceId).</summary>
+        </member>
+        <member name="M:StudentManagement.Controllers.StudentController.CancelRestore(System.Int32)">
+            <summary>Huỷ đơn khôi phục đang ở trạng thái Pending.</summary>
+        </member>
+        <member name="P:StudentManagement.DTOs.UpdateScheduleDto.SlotNumber">
+            <summary>
+            Số thứ tự slot (1–7). Nếu truyền SlotNumber thì TimeStart/TimeEnd
+            sẽ được tự động lấy từ SlotDefinition — không cần nhập tay.
+            </summary>
+        </member>
+        <member name="P:StudentManagement.DTOs.UpdateScheduleDto.Schedule">
+            <summary>
+            Chuỗi mô tả lịch học tuỳ ý (ví dụ: "Thứ 2, Thứ 4 – Slot 1 – P.A101").
+            Vẫn dùng được nếu không chọn slot.
+            </summary>
+        </member>
+        <member name="T:StudentManagement.Migrations.Init">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.Init.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.Init.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.Init.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddClassAndEnrollmentTables">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassAndEnrollmentTables.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassAndEnrollmentTables.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassAndEnrollmentTables.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddTeacherToClass">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddTeacherToClass.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddTeacherToClass.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddTeacherToClass.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddClassTable">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddClassTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddCourseTable">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourseTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourseTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourseTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddCourse">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourse.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourse.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddCourse.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.AddUserIdToStudentTeacher">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddUserIdToStudentTeacher.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddUserIdToStudentTeacher.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddUserIdToStudentTeacher.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Repositories.Interfaces.IStudentRepository">
+            <summary>
+            Tất cả thao tác đọc/ghi dữ liệu liên quan đến học sinh.
+            Controller và Service KHÔNG được dùng DbContext trực tiếp – chỉ qua interface này.
+            </summary>
+        </member>
+        <member name="T:StudentManagement.Services.Interfaces.IStudentService">
+            <summary>
+            Business logic liên quan đến học sinh.
+            Controller chỉ gọi interface này, không chứa logic.
+            </summary>
+        </member>
+        <member name="M:StudentManagement.Utils.ScheduleParser.ParseFromDto(StudentManagement.DTOs.UpdateScheduleDto)">
+            <summary>
+            Parse lịch từ DTO. Nếu SlotNumber hợp lệ thì dùng giờ từ SlotDefinition;
+            nếu không thì parse chuỗi Schedule như cũ.
+            </summary>
+        </member>
+        <member name="M:StudentManagement.Utils.ScheduleParser.ParseDaysOfWeek(System.String)">
+            <summary>Trả về int[] DayOfWeek – dùng nhanh khi chỉ cần check ngày.</summary>
+        </member>
+        <member name="T:StudentManagement.Utils.SlotDefinition">
+            <summary>
+            Định nghĩa các slot học cố định trong ngày.
+            </summary>
+        </member>
+        <member name="M:StudentManagement.Utils.SlotDefinition.Get(System.Int32)">
+            <summary>Lấy Slot theo số thứ tự (1–7). Trả về null nếu không hợp lệ.</summary>
+        </member>
+        <member name="M:StudentManagement.Utils.SlotDefinition.IsValid(System.Int32)">
+            <summary>Kiểm tra slotNumber có hợp lệ không.</summary>
+        </member>
+    </members>
+</doc>

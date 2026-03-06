@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập</title>
+    <!-- <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            margin-top: 100px; 
+            background: #f4f4f4; 
+        }
+        .container { 
+            max-width: 400px; 
+            margin: auto; 
+            padding: 30px; 
+            background: white; 
+            border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+        }
+        input { 
+            display: block; 
+            margin: 15px auto; 
+            padding: 12px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+        }
+        .password-wrapper { 
+            position: relative; 
+        }
+        .toggle-password { 
+            position: absolute; 
+            right: 10px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            cursor: pointer; 
+            color: #666; 
+        }
+        button { 
+            padding: 12px 30px; 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+        }
+        button:disabled { 
+            background: #aaa; 
+            cursor: not-allowed; 
+        }
+        #message { 
+            margin-top: 15px; 
+            font-weight: bold; 
+        }
+        .link { 
+            margin-top: 20px; 
+            font-size: 14px; 
+        }
+    </style> -->
+</head>
+<body>
+    <div class="container">
+        <h2>Đăng nhập</h2>
+
+        <input id="username" placeholder="Username hoặc Email" required />
+        
+        <div class="password-wrapper">
+            <input id="password" type="password" placeholder="Mật khẩu" required />
+            <span class="toggle-password" onclick="togglePassword()">👁️</span>
+        </div>
+
+        <button id="loginBtn" onclick="login()">Đăng nhập</button>
+        <p id="message"></p>
+
+        <div class="link">
+            <a href="register.html">Chưa có tài khoản? Đăng ký</a><br>
+            <a href="#">Quên mật khẩu?</a>
+        </div>
+    </div>
+
+ <script>
+    // Toggle hiển thị mật khẩu
+    function togglePassword() {
+        const passInput = document.getElementById("password");
+        const icon = document.querySelector(".toggle-password");
+        if (passInput.type === "password") {
+            passInput.type = "text";
+            icon.innerText = "";  // thay icon nếu bạn dùng font-awesome hoặc emoji
+        } else {
+            passInput.type = "password";
+            icon.innerText = "";
+        }
+    }
+
+    async function login() {
+        const btn = document.getElementById("loginBtn");
+        const messageEl = document.getElementById("message");
+
+        btn.disabled = true;
+        messageEl.innerText = "Đang đăng nhập...";
+        messageEl.style.color = "blue";
+
+        try {
+            const response = await fetch("http://localhost:5187/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("username").value.trim(),
+                    password: document.getElementById("password").value
+                })
+            });
+
+            const data = await response.json();
+
+            console.log("Response đầy đủ từ backend:", data);  // Debug: xem toàn bộ data trả về
+
+            if (!response.ok) {
+                messageEl.innerText = data.message || "Sai tài khoản hoặc mật khẩu";
+                messageEl.style.color = "red";
+                btn.disabled = false;
+                return;
+            }
+
+            // Kiểm tra token có tồn tại không
+            if (!data.token) {
+                messageEl.innerText = "Đăng nhập thành công nhưng backend không trả token!";
+                messageEl.style.color = "orange";
+                console.error("Backend không trả trường 'token'");
+                btn.disabled = false;
+                return;
+            }
+
+            // Lưu thông tin - dùng key "auth_token" để khớp với student.html
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("role", data.role);
+            localStorage.setItem("userId", data.userId);
+            localStorage.setItem("username", data.username);
+
+            console.log("Token đã lưu thành công:", data.token.substring(0, 20) + "...");  // Debug
+
+            messageEl.innerText = "Đăng nhập thành công!";
+            messageEl.style.color = "green";
+
+            // Chuyển trang theo role
+            setTimeout(() => {
+                if (data.role === "Admin") {
+                    window.location.href = "admin.html";
+                } else if (data.role === "Teacher") {
+                    window.location.href = "teacher.html";
+                } else {
+                    window.location.href = "student.html";
+                }
+            }, 800);
+
+        } catch (err) {
+            messageEl.innerText = "Lỗi kết nối server: " + err.message;
+            messageEl.style.color = "red";
+            console.error("Lỗi fetch login:", err);
+            btn.disabled = false;
+        }
+    }
+
+    // Nhấn Enter để submit
+    document.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            login();
+        }
+    });
+</script>
+</body>
+</html>

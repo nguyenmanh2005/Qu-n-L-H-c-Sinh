@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Giáo Viên - Student Management</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white; padding: 20px;
+            border-radius: 10px; margin-bottom: 30px;
+            text-align: center; position: relative;
+        }
+        .logout-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white; color: white;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.4); }
+        h1, h2 { margin: 0.5em 0; }
+        .card {
+            background: white; border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 25px; margin-bottom: 30px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px; margin-bottom: 20px;
+        }
+        .info-item {
+            background: #fff5f5; padding: 15px;
+            border-radius: 8px; border-left: 5px solid #ff6b6b;
+        }
+        .classes-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .class-card {
+            background: #fff; border: 1px solid #ffe0e0;
+            border-radius: 10px; padding: 20px; transition: all 0.2s;
+        }
+        .class-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .class-name { font-size: 1.15em; font-weight: bold; margin-bottom: 8px; color: #c0392b; }
+        button {
+            padding: 10px 20px; font-size: 1em;
+            background: #ff6b6b; color: white;
+            border: none; border-radius: 6px;
+            cursor: pointer; transition: background 0.3s;
+        }
+        button:hover { background: #e74c3c; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-blue { background: #3498db; } .btn-blue:hover { background: #2980b9; }
+        .btn-green { background: #27ae60; } .btn-green:hover { background: #219a52; }
+        .btn-orange { background: #e67e22; } .btn-orange:hover { background: #d35400; }
+        .btn-gray { background: #95a5a6; } .btn-gray:hover { background: #7f8c8d; }
+        .btn-sm { padding: 6px 14px; font-size: 0.88em; }
+        .message {
+            padding: 12px 16px; border-radius: 8px;
+            margin: 12px 0; text-align: center; font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error   { background: #f8d7da; color: #721c24; }
+
+        /* ===== MAIN TABS ===== */
+        .main-tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            border-bottom: 2px solid #eee; padding-bottom: 0;
+            flex-wrap: wrap;
+        }
+        .main-tab-btn {
+            padding: 10px 20px; background: none;
+            border: none; border-radius: 8px 8px 0 0;
+            color: #888; cursor: pointer; font-size: 1em;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s; margin-bottom: -2px;
+        }
+        .main-tab-btn:hover { color: #ff6b6b; background: #fff5f5; }
+        .main-tab-btn.active {
+            color: #ff6b6b; font-weight: 700;
+            border-bottom: 3px solid #ff6b6b;
+            background: white;
+        }
+        .main-tab-content { display: none; }
+        .main-tab-content.active { display: block; }
+
+        /* ===== CALENDAR ===== */
+        .calendar-header {
+            display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 16px;
+        }
+        .calendar-nav {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .calendar-nav button {
+            padding: 6px 14px; font-size: 1em; background: #f0f0f0; color: #333;
+        }
+        .calendar-nav button:hover { background: #e0e0e0; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .cal-day-header {
+            text-align: center; font-weight: 700;
+            padding: 8px 4px; font-size: 0.85em; color: #888;
+        }
+        .cal-day {
+            min-height: 80px; border: 1px solid #eee;
+            border-radius: 8px; padding: 6px;
+            background: white; position: relative;
+            transition: background 0.2s;
+        }
+        .cal-day:hover { background: #fff9f9; }
+        .cal-day.other-month { background: #fafafa; opacity: 0.5; }
+        .cal-day.today { border: 2px solid #ff6b6b; background: #fff5f5; }
+        .cal-day-num {
+            font-size: 0.85em; font-weight: 700;
+            color: #555; margin-bottom: 4px;
+        }
+        .cal-day.today .cal-day-num { color: #ff6b6b; }
+        .cal-event {
+            font-size: 0.72em; padding: 2px 5px;
+            border-radius: 4px; margin-bottom: 2px;
+            cursor: pointer; line-height: 1.3;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cal-event.class-event { background: #fde8e8; color: #c0392b; border-left: 3px solid #ff6b6b; }
+        .cal-event.attended { background: #d4edda; color: #155724; border-left: 3px solid #27ae60; }
+        .cal-event.not-attended { background: #f8d7da; color: #721c24; border-left: 3px solid #e74c3c; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            justify-content: center; align-items: flex-start;
+            padding: 40px 16px; overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white; border-radius: 12px;
+            padding: 30px; width: 100%; max-width: 760px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 14px; right: 18px;
+            font-size: 1.5em; cursor: pointer;
+            background: none; border: none; color: #666; padding: 0;
+        }
+        .modal-close:hover { color: #e74c3c; background: none; }
+        .modal h2 { margin-top: 0; color: #c0392b; }
+        .modal-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 18px; font-size: 0.92em;
+            background: #eee; color: #333; border-radius: 6px;
+        }
+        .tab-btn.active { background: #ff6b6b; color: white; }
+        .tab-btn:hover { background: #ff6b6b; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== TABLE ===== */
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #eee; padding: 10px 12px; text-align: left; font-size: 0.93em; }
+        th { background: #fff5f5; color: #c0392b; font-weight: 600; }
+        tr:hover td { background: #fafafa; }
+
+        /* Edit form */
+        .edit-form label { font-weight: 600; color: #555; display: block; margin-top: 14px; margin-bottom: 5px; }
+        .edit-form input[type="text"],
+        .edit-form input[type="datetime-local"] {
+            width: 100%; padding: 10px; border: 1px solid #ddd;
+            border-radius: 6px; font-size: 1em;
+        }
+
+        /* Attendance tab */
+        .att-toolbar {
+            background: #fff8f0; border: 1px solid #ffd8a8;
+            border-radius: 8px; padding: 14px 16px; margin-bottom: 14px;
+            display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+        }
+        .att-toolbar > div { display: flex; flex-direction: column; gap: 5px; }
+        .att-toolbar label { font-weight: 600; color: #555; font-size: 0.9em; }
+        .att-toolbar input { padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; }
+        .att-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .att-stat-box {
+            padding: 10px 18px; border-radius: 8px;
+            font-weight: bold; font-size: 0.95em;
+        }
+        .att-stat-present { background: #d4edda; color: #155724; }
+        .att-stat-absent  { background: #f8d7da; color: #721c24; }
+        .att-stat-total   { background: #e8f4fd; color: #1a5276; }
+        .att-history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 8px;
+            border: 1px solid #eee; margin-bottom: 8px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .att-history-item:hover { background: #fff5f5; border-color: #ff6b6b; }
+
+        /* Schedule list */
+        .schedule-list { display: flex; flex-direction: column; gap: 12px; }
+        .schedule-item {
+            display: flex; gap: 16px; align-items: stretch;
+            background: white; border-radius: 10px;
+            border: 1px solid #eee; overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .schedule-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .schedule-dot {
+            width: 6px; background: #ff6b6b; flex-shrink: 0;
+        }
+        .schedule-body { padding: 14px 16px; flex: 1; }
+        .schedule-class-name { font-weight: 700; color: #c0392b; font-size: 1.05em; margin-bottom: 4px; }
+        .schedule-meta { color: #666; font-size: 0.9em; display: flex; gap: 16px; flex-wrap: wrap; }
+
+        /* Week view */
+        .week-strip {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            gap: 8px; margin-bottom: 20px;
+        }
+        .week-day {
+            text-align: center; padding: 10px 4px;
+            border-radius: 8px; border: 1px solid #eee;
+            background: white; cursor: pointer; transition: all 0.2s;
+        }
+        .week-day:hover { border-color: #ff6b6b; background: #fff5f5; }
+        .week-day.selected { background: #ff6b6b; color: white; border-color: #ff6b6b; }
+        .week-day.today { border-color: #ff6b6b; font-weight: bold; }
+        .week-day-name { font-size: 0.75em; color: inherit; opacity: 0.75; }
+        .week-day-num { font-size: 1.1em; font-weight: 700; margin-top: 2px; }
+        .week-day.selected .week-day-name { opacity: 1; }
+        .week-nav { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .week-nav span { flex: 1; text-align: center; font-weight: 600; color: #555; }
+
+        footer { text-align: center; margin-top: 40px; color: #777; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1 id="welcomeTitle">Chào mừng Giáo viên!</h1>
+        <p>Trang quản lý lớp học</p>
+        <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+    </header>
+
+    <!-- Thông tin cá nhân -->
+    <div class="card">
+        <h2>Thông tin giáo viên</h2>
+        <div class="info-grid" id="teacherInfo">
+            <div class="info-item"><strong>Họ và tên:</strong><br>Đang tải...</div>
+            <div class="info-item"><strong>Email:</strong><br>Đang tải...</div>
+            <div class="info-item"><strong>Số điện thoại:</strong><br>Đang tải...</div>
+            <div class="info-item"><strong>Số lớp đang dạy:</strong><br>Đang tải...</div>
+        </div>
+    </div>
+
+    <!-- MAIN TABS -->
+    <div class="main-tabs">
+        <button class="main-tab-btn active" onclick="switchMainTab('classes', this)">🏫 Lớp học</button>
+        <button class="main-tab-btn" onclick="switchMainTab('schedule', this)">📅 Lịch học</button>
+        <button class="main-tab-btn" onclick="switchMainTab('restore', this)">📬 Đơn khôi phục</button>
+    </div>
+
+    <!-- Tab: Lớp học -->
+    <div class="main-tab-content active" id="maintab-classes">
+        <div class="card" style="padding-top:20px;">
+            <h2 style="margin-top:0;">Lớp học đang phụ trách</h2>
+            <div class="classes-list" id="classesList">
+                <p style="text-align:center;color:#777;">Đang tải...</p>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Yêu cầu tham gia lớp</h2>
+            <div id="requestsList">
+                <p style="text-align:center;color:#777;">Không có yêu cầu tham gia nào.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Lịch học -->
+    <div class="main-tab-content" id="maintab-schedule">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+                <h2 style="margin:0;">📅 Lịch học của tôi</h2>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-sm btn-blue" onclick="setScheduleView('week')" id="btnViewWeek">Tuần</button>
+                    <button class="btn-sm" onclick="setScheduleView('list')" id="btnViewList" style="background:#eee;color:#333;">Danh sách</button>
+                </div>
+            </div>
+
+            <!-- Week view -->
+            <div id="scheduleWeekView">
+                <div class="week-nav">
+                    <button class="btn-sm btn-gray" onclick="changeWeek(-1)">← Tuần trước</button>
+                    <span id="weekLabel">Tuần này</span>
+                    <button class="btn-sm btn-gray" onclick="changeWeek(1)">Tuần sau →</button>
+                    <button class="btn-sm btn-orange" onclick="goToCurrentWeek()">Hôm nay</button>
+                </div>
+                <div class="week-strip" id="weekStrip"></div>
+                <div id="dayScheduleDetail">
+                    <p style="text-align:center;color:#aaa;padding:20px 0;">Chọn một ngày để xem lịch dạy.</p>
+                </div>
+            </div>
+
+            <!-- List view -->
+            <div id="scheduleListView" style="display:none;">
+                <div class="schedule-list" id="scheduleListContainer">
+                    <p style="text-align:center;color:#777;">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Đơn khôi phục -->
+    <div class="main-tab-content" id="maintab-restore">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                <h2 style="margin:0;">📬 Đơn xin khôi phục điểm danh</h2>
+                <button class="btn-sm btn-green" onclick="loadRestoreRequests()">🔄 Làm mới</button>
+            </div>
+            <div id="restoreRequests">
+                <p style="text-align:center;color:#777;">Đang tải...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL QUẢN LÝ LỚP ===== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <h2 id="modalTitle">Quản lý lớp</h2>
+        <div id="globalMsg" class="message" style="display:none;"></div>
+
+        <div class="modal-tabs">
+            <button class="tab-btn active" id="tabBtnStudents"  onclick="switchTab('students', this)">👥 Học sinh</button>
+            <button class="tab-btn" id="tabBtnAttendance" onclick="switchTab('attendance', this)">📋 Điểm danh</button>
+            <button class="tab-btn" id="tabBtnHistory"   onclick="switchTab('history', this)">📊 Lịch sử</button>
+            <button class="tab-btn" id="tabBtnEdit"      onclick="switchTab('edit', this)">✏️ Sửa lớp</button>
+        </div>
+
+        <!-- Tab: Học sinh -->
+        <div class="tab-content active" id="tab-students">
+            <div id="studentsTableContainer"><p style="color:#777;">Đang tải...</p></div>
+        </div>
+
+        <!-- Tab: Điểm danh -->
+        <div class="tab-content" id="tab-attendance">
+            <div class="att-toolbar">
+                <div>
+                    <label>📅 Ngày điểm danh</label>
+                    <input type="date" id="attendanceDatePicker" />
+                </div>
+                <button class="btn-blue btn-sm" onclick="loadAttendanceTab()">🔍 Tải danh sách</button>
+                <button class="btn-green btn-sm" onclick="saveAttendanceFromTab()">💾 Lưu điểm danh</button>
+                <button class="btn-sm btn-gray" onclick="checkAll(true)">✔ Tất cả có mặt</button>
+                <button class="btn-sm btn-gray" onclick="checkAll(false)">✘ Tất cả vắng</button>
+            </div>
+            <div class="att-stats" id="attStats" style="display:none;"></div>
+            <div id="attendanceTableContainer">
+                <p style="text-align:center;color:#aaa;padding:30px 0;">Chọn ngày và nhấn "Tải danh sách".</p>
+            </div>
+            <div id="attendanceSaveMsg" class="message" style="display:none;"></div>
+        </div>
+
+        <!-- Tab: Lịch sử điểm danh -->
+        <div class="tab-content" id="tab-history">
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+                <label style="font-weight:600;color:#555;">Xem tháng:</label>
+                <input type="month" id="historyMonth" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:0.95em;" />
+                <button class="btn-sm btn-blue" onclick="loadAttendanceHistory()">🔍 Xem</button>
+            </div>
+            <div id="historyContainer">
+                <p style="text-align:center;color:#aaa;padding:20px 0;">Chọn tháng để xem lịch sử điểm danh.</p>
+            </div>
+        </div>
+
+        <!-- Tab: Sửa lớp -->
+        <div class="tab-content" id="tab-edit">
+            <div class="edit-form">
+                <input type="hidden" id="editClassId" />
+                <label>Tên lớp</label>
+                <input type="text" id="editClassName" placeholder="Tên lớp" />
+                <label>Lịch học</label>
+                <input type="text" id="editSchedule" placeholder="Ví dụ: Thứ 2,4 - 7:30-9:00" />
+                <label>Ngày bắt đầu</label>
+                <input type="datetime-local" id="editStartDate" />
+                <div style="margin-top:16px;">
+                    <button class="btn-green" onclick="saveClassEdit()">💾 Lưu thay đổi</button>
+                </div>
+                <div id="editMessage" class="message" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>© 2026 Student Management System</footer>
+
+<script>
+const API_BASE_URL = 'http://localhost:5187';
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+
+if (!token || role !== 'Teacher') {
+    alert('Bạn không có quyền vào đây.');
+    window.location.href = 'login.html';
+}
+
+const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+let _currentClassId = null;
+let _allClasses = [];
+let _currentWeekOffset = 0;
+let _selectedWeekDay = null;
+
+// ===== UTILITIES =====
+function showGlobalMsg(text, type) {
+    const el = document.getElementById('globalMsg');
+    el.textContent = text; el.className = 'message ' + type;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 6000);
+}
+function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+// ===== MAIN TABS =====
+function switchMainTab(name, btn) {
+    document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('maintab-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (name === 'schedule') renderSchedule();
+    if (name === 'restore') loadRestoreRequests();
+}
+
+// ===== LOAD ON START =====
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const profileRes = await fetch(`${API_BASE_URL}/api/teacher/profile`, { headers });
+        if (!profileRes.ok) throw new Error(`Lỗi profile: ${profileRes.status}`);
+        const teacher = await profileRes.json();
+
+        document.getElementById('welcomeTitle').textContent =
+            `Chào mừng, ${teacher.fullName || teacher.username || 'Giáo viên'}!`;
+        document.getElementById('teacherInfo').innerHTML = `
+            <div class="info-item"><strong>Họ và tên:</strong><br>${teacher.fullName || 'Chưa cập nhật'}</div>
+            <div class="info-item"><strong>Email:</strong><br>${teacher.email || 'Chưa cập nhật'}</div>
+            <div class="info-item"><strong>Số điện thoại:</strong><br>${teacher.phoneNumber || 'Chưa cập nhật'}</div>
+            <div class="info-item"><strong>Số lớp đang dạy:</strong><br>${teacher.classCount || 0}</div>
+        `;
+        await loadClasses();
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+async function loadClasses() {
+    const res = await fetch(`${API_BASE_URL}/api/teacher/classes`, { headers });
+    if (!res.ok) return;
+    _allClasses = await res.json();
+
+    const container = document.getElementById('classesList');
+    if (!_allClasses.length) {
+        container.innerHTML = '<p style="text-align:center;color:#777;">Bạn chưa phụ trách lớp nào.</p>';
+        return;
+    }
+    container.innerHTML = '';
+    _allClasses.forEach(cls => {
+        const card = document.createElement('div');
+        card.className = 'class-card';
+        card.innerHTML = `
+            <div class="class-name">${cls.name}</div>
+            <p style="color:#888;font-size:0.9em;margin:4px 0;">Mã: <strong>${cls.code}</strong></p>
+            <p style="color:#888;font-size:0.9em;margin:4px 0;">👥 ${cls.studentCount || 0} học sinh</p>
+            <p style="color:#888;font-size:0.9em;margin:4px 0;">🕐 ${cls.schedule || 'Chưa cập nhật'}</p>
+            <p style="color:#888;font-size:0.9em;margin:4px 0;">📅 ${cls.startDate ? new Date(cls.startDate).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</p>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-blue btn-sm" onclick="openModal(${cls.id},'${escQ(cls.name)}','${escQ(cls.schedule||'')}','${cls.startDate||''}')">
+                    ⚙️ Quản lý
+                </button>
+                <button class="btn-green btn-sm" onclick="quickAttendance(${cls.id},'${escQ(cls.name)}')">
+                    📋 Điểm danh
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function escQ(s) { return (s||'').replace(/'/g, "\\'"); }
+
+// ===== SCHEDULE VIEW =====
+function setScheduleView(view) {
+    document.getElementById('scheduleWeekView').style.display = view === 'week' ? 'block' : 'none';
+    document.getElementById('scheduleListView').style.display = view === 'list' ? 'block' : 'none';
+    document.getElementById('btnViewWeek').style.background = view === 'week' ? '#3498db' : '#eee';
+    document.getElementById('btnViewWeek').style.color = view === 'week' ? 'white' : '#333';
+    document.getElementById('btnViewList').style.background = view === 'list' ? '#3498db' : '#eee';
+    document.getElementById('btnViewList').style.color = view === 'list' ? 'white' : '#333';
+    if (view === 'list') renderScheduleList();
+}
+
+function renderSchedule() {
+    renderWeekStrip();
+    // default: show today
+    const today = new Date();
+    _selectedWeekDay = today.toISOString().substring(0, 10);
+    renderDaySchedule(_selectedWeekDay);
+    highlightSelectedDay();
+}
+
+function getWeekDates(offset) {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        dates.push(d);
+    }
+    return dates;
+}
+
+function renderWeekStrip() {
+    const dates = getWeekDates(_currentWeekOffset);
+    const today = new Date().toISOString().substring(0, 10);
+    const strip = document.getElementById('weekStrip');
+    const dayNames = ['T2','T3','T4','T5','T6','T7','CN'];
+    strip.innerHTML = '';
+    dates.forEach((d, i) => {
+        const iso = d.toISOString().substring(0, 10);
+        const div = document.createElement('div');
+        div.className = 'week-day' + (iso === today ? ' today' : '') + (iso === _selectedWeekDay ? ' selected' : '');
+        div.dataset.date = iso;
+        div.innerHTML = `<div class="week-day-name">${dayNames[i]}</div><div class="week-day-num">${d.getDate()}</div>`;
+        div.onclick = () => { _selectedWeekDay = iso; highlightSelectedDay(); renderDaySchedule(iso); };
+        strip.appendChild(div);
+    });
+
+    // Update week label
+    const first = dates[0], last = dates[6];
+    document.getElementById('weekLabel').textContent =
+        `${first.getDate()}/${first.getMonth()+1} – ${last.getDate()}/${last.getMonth()+1}/${last.getFullYear()}`;
+}
+
+function highlightSelectedDay() {
+    document.querySelectorAll('.week-day').forEach(d => {
+        d.classList.toggle('selected', d.dataset.date === _selectedWeekDay);
+    });
+}
+
+function changeWeek(dir) {
+    _currentWeekOffset += dir;
+    renderWeekStrip();
+    if (_selectedWeekDay) renderDaySchedule(_selectedWeekDay);
+}
+
+function goToCurrentWeek() {
+    _currentWeekOffset = 0;
+    _selectedWeekDay = new Date().toISOString().substring(0, 10);
+    renderWeekStrip();
+    renderDaySchedule(_selectedWeekDay);
+    highlightSelectedDay();
+}
+
+function parseDayOfWeek(schedule) {
+    // parse "Thứ 2,4 - 7:30" style strings → returns array of JS weekday numbers (1=Mon..0=Sun)
+    if (!schedule) return [];
+    const map = { '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, 'CN': 0, 'cn': 0 };
+    const days = [];
+    for (const [k, v] of Object.entries(map)) {
+        if (schedule.includes('Thứ ' + k) || schedule.includes('Thu ' + k) || schedule.includes(k)) {
+            days.push(v);
+        }
+    }
+    return [...new Set(days)];
+}
+
+function renderDaySchedule(dateStr) {
+    const container = document.getElementById('dayScheduleDetail');
+    const d = new Date(dateStr + 'T00:00:00');
+    const jsDay = d.getDay(); // 0=Sun,1=Mon...
+
+    const todayClasses = _allClasses.filter(cls => {
+        const days = parseDayOfWeek(cls.schedule || '');
+        return days.includes(jsDay);
+    });
+
+    const dateLabel = d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    if (!todayClasses.length) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:30px 0;color:#aaa;">
+                <div style="font-size:2em;margin-bottom:8px;">📅</div>
+                <strong>${dateLabel}</strong>
+                <p>Không có lịch dạy ngày này.</p>
+            </div>`;
+        return;
+    }
+
+    const isToday = dateStr === new Date().toISOString().substring(0, 10);
+    container.innerHTML = `
+        <h3 style="color:#c0392b;margin-bottom:12px;">📅 ${dateLabel}</h3>
+        <div class="schedule-list">
+            ${todayClasses.map(cls => `
+                <div class="schedule-item">
+                    <div class="schedule-dot"></div>
+                    <div class="schedule-body">
+                        <div class="schedule-class-name">${cls.name}</div>
+                        <div class="schedule-meta">
+                            <span>🏷️ ${cls.code}</span>
+                            <span>🕐 ${cls.schedule || '—'}</span>
+                            <span>👥 ${cls.studentCount || 0} học sinh</span>
+                        </div>
+                    </div>
+                    <div style="padding:14px 16px;display:flex;flex-direction:column;justify-content:center;gap:8px;">
+                        ${isToday ? `<button class="btn-green btn-sm" onclick="quickAttendance(${cls.id},'${escQ(cls.name)}')">📋 Điểm danh</button>` : ''}
+                        <button class="btn-blue btn-sm" onclick="openModal(${cls.id},'${escQ(cls.name)}','${escQ(cls.schedule||'')}','${cls.startDate||''}')">⚙️ Quản lý</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderScheduleList() {
+    const container = document.getElementById('scheduleListContainer');
+    if (!_allClasses.length) {
+        container.innerHTML = '<p style="text-align:center;color:#777;">Bạn chưa phụ trách lớp nào.</p>';
+        return;
+    }
+    const dayNames = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+    container.innerHTML = `<div class="schedule-list">
+        ${_allClasses.map(cls => `
+            <div class="schedule-item">
+                <div class="schedule-dot"></div>
+                <div class="schedule-body">
+                    <div class="schedule-class-name">${cls.name}</div>
+                    <div class="schedule-meta">
+                        <span>🏷️ Mã: ${cls.code}</span>
+                        <span>🕐 Lịch: ${cls.schedule || 'Chưa cập nhật'}</span>
+                        <span>📅 Bắt đầu: ${cls.startDate ? new Date(cls.startDate).toLocaleDateString('vi-VN') : '—'}</span>
+                        <span>👥 ${cls.studentCount || 0} học sinh</span>
+                    </div>
+                </div>
+                <div style="padding:14px;display:flex;align-items:center;gap:8px;">
+                    <button class="btn-green btn-sm" onclick="quickAttendance(${cls.id},'${escQ(cls.name)}')">📋 Điểm danh</button>
+                    <button class="btn-blue btn-sm" onclick="openModal(${cls.id},'${escQ(cls.name)}','${escQ(cls.schedule||'')}','${cls.startDate||''}')">⚙️ Quản lý</button>
+                </div>
+            </div>
+        `).join('')}
+    </div>`;
+}
+
+// ===== QUICK ATTENDANCE (shortcut from schedule) =====
+function quickAttendance(classId, className) {
+    openModal(classId, className, '', '');
+    setTimeout(() => switchTab('attendance', document.getElementById('tabBtnAttendance')), 100);
+}
+
+// ===== MODAL =====
+function openModal(classId, className, schedule, startDate) {
+    _currentClassId = classId;
+    document.getElementById('modalTitle').textContent = `${className}`;
+    document.getElementById('editClassId').value   = classId;
+    document.getElementById('editClassName').value = className;
+    document.getElementById('editSchedule').value  = schedule;
+    document.getElementById('editStartDate').value = startDate ? startDate.substring(0, 16) : '';
+    document.getElementById('editMessage').style.display = 'none';
+    document.getElementById('globalMsg').style.display = 'none';
+
+    const today = new Date().toISOString().substring(0, 10);
+    document.getElementById('attendanceDatePicker').value = today;
+
+    const now = new Date();
+    document.getElementById('historyMonth').value =
+        `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+    document.getElementById('attendanceTableContainer').innerHTML =
+        '<p style="text-align:center;color:#aaa;padding:30px 0;">Chọn ngày và nhấn "Tải danh sách".</p>';
+    document.getElementById('attStats').style.display = 'none';
+    document.getElementById('attendanceSaveMsg').style.display = 'none';
+
+    switchTab('students', document.getElementById('tabBtnStudents'));
+    loadStudents(classId);
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
+
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+}
+
+// ===== DANH SÁCH HỌC SINH =====
+async function loadStudents(classId) {
+    const container = document.getElementById('studentsTableContainer');
+    container.innerHTML = '<p style="color:#777;">Đang tải...</p>';
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/students`, { headers });
+        if (!res.ok) throw new Error('Lỗi tải danh sách học sinh');
+        const data = await res.json();
+
+        if (!data.students || !data.students.length) {
+            container.innerHTML = '<p style="text-align:center;color:#777;padding:20px;">Chưa có học sinh nào.</p>';
+            return;
+        }
+
+        const pending  = data.students.filter(s => s.status === 'Pending');
+        const approved = data.students.filter(s => s.status === 'Approved');
+
+        container.innerHTML = `
+            <p style="color:#555;margin-bottom:10px;">
+                Tổng: <strong>${data.students.length}</strong>
+                &nbsp;·&nbsp;<span style="color:#f39c12;">⏳ Chờ duyệt: ${pending.length}</span>
+                &nbsp;·&nbsp;<span style="color:#27ae60;">✅ Đã duyệt: ${approved.length}</span>
+            </p>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Họ và tên</th><th>Email</th><th>Trạng thái</th><th>Ngày vào</th><th>Hành động</th></tr>
+                </thead>
+                <tbody>
+                    ${data.students.map((s, i) => `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td><strong>${s.studentName}</strong></td>
+                            <td style="color:#666;">${s.email || '—'}</td>
+                            <td>${statusBadge(s.status)}</td>
+                            <td>${s.approvedDate ? new Date(s.approvedDate).toLocaleDateString('vi-VN') : '—'}</td>
+                            <td>
+                                ${s.status === 'Pending' ? `
+                                    <button class="btn-green btn-sm" onclick="approveEnrollment(${s.enrollmentId},${classId})">✔</button>
+                                    <button class="btn-sm" style="background:#e74c3c;color:white;margin-left:4px;" onclick="rejectEnrollment(${s.enrollmentId},${classId})">✘</button>
+                                ` : '—'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <div style="margin-top:12px;padding:10px;background:#f0f8ff;border-radius:8px;font-size:0.9em;color:#555;">
+                💡 Để điểm danh, chuyển sang tab <strong>📋 Điểm danh</strong>
+            </div>
+        `;
+    } catch (err) {
+        container.innerHTML = `<p style="color:red;">${err.message}</p>`;
+    }
+}
+
+function statusBadge(status) {
+    if (status === 'Pending')  return '<span style="background:#fff3cd;color:#856404;padding:3px 8px;border-radius:12px;font-size:0.82em;font-weight:bold;">⏳ Chờ duyệt</span>';
+    if (status === 'Approved') return '<span style="background:#d4edda;color:#155724;padding:3px 8px;border-radius:12px;font-size:0.82em;font-weight:bold;">✅ Đã duyệt</span>';
+    return '<span style="background:#f8d7da;color:#721c24;padding:3px 8px;border-radius:12px;font-size:0.82em;font-weight:bold;">❌ Từ chối</span>';
+}
+
+// ===== ĐIỂM DANH =====
+async function loadAttendanceTab() {
+    const classId = _currentClassId;
+    const dateVal = document.getElementById('attendanceDatePicker').value;
+    if (!dateVal) return alert('Vui lòng chọn ngày điểm danh');
+
+    const container = document.getElementById('attendanceTableContainer');
+    container.innerHTML = '<p style="color:#777;text-align:center;">Đang tải...</p>';
+    document.getElementById('attStats').style.display = 'none';
+    document.getElementById('attendanceSaveMsg').style.display = 'none';
+
+    try {
+        const studRes = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/students`, { headers });
+        if (!studRes.ok) throw new Error('Lỗi tải học sinh');
+        const data = await studRes.json();
+        const approved = (data.students || []).filter(s => s.status === 'Approved');
+
+        if (!approved.length) {
+            container.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;">Chưa có học sinh được duyệt.</p>';
+            return;
+        }
+
+        const dateISO = new Date(dateVal + 'T00:00:00').toISOString();
+        const attRes = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/attendance?date=${encodeURIComponent(dateISO)}`, { headers });
+        const attData = attRes.ok ? await attRes.json() : [];
+        const attMap = {};
+        (attData || []).forEach(a => { attMap[a.studentId] = a; });
+
+        renderAttendanceTable(approved, attMap, classId);
+        updateAttStats();
+    } catch (err) {
+        container.innerHTML = `<p style="color:red;">${err.message}</p>`;
+    }
+}
+
+function renderAttendanceTable(students, attMap, classId) {
+    const container = document.getElementById('attendanceTableContainer');
+    container.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px;">#</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th style="width:110px;text-align:center;">Có mặt</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${students.map((s, i) => {
+                    const att = attMap[s.studentId];
+                    const checked = att?.present ? 'checked' : '';
+                    return `
+                    <tr id="attRow_${s.studentId}" style="${att?.present ? 'background:#f0fff4;' : ''}">
+                        <td>${i+1}</td>
+                        <td><strong>${s.studentName}</strong></td>
+                        <td style="color:#666;">${s.email || '—'}</td>
+                        <td style="text-align:center;">
+                            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                                <input type="checkbox" id="att_${s.studentId}" ${checked}
+                                    onchange="updateAttRow('${s.studentId}', this.checked)"
+                                    style="width:18px;height:18px;cursor:pointer;">
+                                <span id="attLabel_${s.studentId}">${att?.present ? '✅' : '❌'}</span>
+                            </label>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+    document.getElementById('attStats').style.display = 'flex';
+    updateAttStats();
+}
+
+function updateAttStats() {
+    const all = document.querySelectorAll('#attendanceTableContainer input[type="checkbox"]');
+    const checked = document.querySelectorAll('#attendanceTableContainer input[type="checkbox"]:checked');
+    document.getElementById('attStats').innerHTML = `
+        <div class="att-stat-box att-stat-present">✅ Có mặt: ${checked.length}</div>
+        <div class="att-stat-box att-stat-absent">❌ Vắng: ${all.length - checked.length}</div>
+        <div class="att-stat-box att-stat-total">👥 Tổng: ${all.length}</div>
+        <div class="att-stat-box" style="background:#f5f5f5;color:#555;">
+            📊 ${all.length > 0 ? Math.round(checked.length/all.length*100) : 0}% có mặt
+        </div>
+    `;
+}
+
+function updateAttRow(studentId, checked) {
+    const label = document.getElementById('attLabel_' + studentId);
+    const row   = document.getElementById('attRow_' + studentId);
+    if (label) label.textContent = checked ? '✅' : '❌';
+    if (row) row.style.background = checked ? '#f0fff4' : '';
+    updateAttStats();
+}
+
+function checkAll(val) {
+    document.querySelectorAll('#attendanceTableContainer input[type="checkbox"]').forEach(cb => {
+        cb.checked = val;
+        updateAttRow(cb.id.replace('att_', ''), val);
+    });
+}
+
+async function saveAttendanceFromTab() {
+    const classId = _currentClassId;
+    const dateVal = document.getElementById('attendanceDatePicker').value;
+    const msgEl   = document.getElementById('attendanceSaveMsg');
+
+    if (!dateVal) { alert('Chọn ngày trước khi lưu'); return; }
+    const checkboxes = document.querySelectorAll('#attendanceTableContainer input[type="checkbox"]');
+    if (!checkboxes.length) { alert('Hãy tải danh sách trước'); return; }
+
+    const entries = [];
+    checkboxes.forEach(cb => entries.push({ studentId: cb.id.replace('att_',''), present: cb.checked }));
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/attendance`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ date: new Date(dateVal + 'T00:00:00').toISOString(), entries })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        msgEl.textContent = `✅ Đã lưu điểm danh ngày ${new Date(dateVal).toLocaleDateString('vi-VN')} thành công!`;
+        msgEl.className = 'message success'; msgEl.style.display = 'block';
+        setTimeout(() => msgEl.style.display = 'none', 5000);
+    } catch (e) {
+        msgEl.textContent = '❌ ' + (e.message || 'Lỗi khi lưu');
+        msgEl.className = 'message error'; msgEl.style.display = 'block';
+    }
+}
+
+// ===== LỊCH SỬ ĐIỂM DANH =====
+async function loadAttendanceHistory() {
+    const classId = _currentClassId;
+    const monthVal = document.getElementById('historyMonth').value;
+    if (!monthVal) return;
+
+    const container = document.getElementById('historyContainer');
+    container.innerHTML = '<p style="text-align:center;color:#777;">Đang tải...</p>';
+
+    try {
+        // Load students first
+        const studRes = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/students`, { headers });
+        const studData = await studRes.json();
+        const approved = (studData.students || []).filter(s => s.status === 'Approved');
+
+        // Load attendance for each day of month that has data
+        const [year, month] = monthVal.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        // Build summary per student
+        const studentMap = {};
+        approved.forEach(s => { studentMap[s.studentId] = { name: s.studentName, present: 0, absent: 0 }; });
+
+        // Fetch each day (we batch by making parallel requests for each week)
+        const datePromises = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateISO = new Date(year, month-1, d).toISOString();
+            datePromises.push(
+                fetch(`${API_BASE_URL}/api/teacher/classes/${classId}/attendance?date=${encodeURIComponent(dateISO)}`, { headers })
+                    .then(r => r.ok ? r.json() : [])
+                    .then(recs => ({ day: d, recs }))
+            );
+        }
+        const allDays = await Promise.all(datePromises);
+
+        // Aggregate
+        const dayData = []; // days with records
+        allDays.forEach(({ day, recs }) => {
+            if (!recs || !recs.length) return;
+            const presentIds = recs.filter(r => r.present).map(r => r.studentId);
+            const absentIds  = recs.filter(r => !r.present).map(r => r.studentId);
+            dayData.push({ day, presentCount: presentIds.length, absentCount: absentIds.length });
+            recs.forEach(r => {
+                if (studentMap[r.studentId]) {
+                    if (r.present) studentMap[r.studentId].present++;
+                    else studentMap[r.studentId].absent++;
+                }
+            });
+        });
+
+        if (!dayData.length) {
+            container.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;">Chưa có dữ liệu điểm danh trong tháng này.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <h4 style="color:#c0392b;margin-bottom:12px;">📊 Tổng hợp tháng ${month}/${year}</h4>
+            <p style="color:#666;margin-bottom:12px;">Số buổi đã điểm danh: <strong>${dayData.length}</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Học sinh</th>
+                        <th style="text-align:center;">✅ Có mặt</th>
+                        <th style="text-align:center;">❌ Vắng</th>
+                        <th style="text-align:center;">📊 Tỉ lệ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Object.entries(studentMap).map(([id, s], i) => {
+                        const total = s.present + s.absent;
+                        const pct   = total > 0 ? Math.round(s.present / total * 100) : 0;
+                        const color = pct >= 80 ? '#155724' : pct >= 60 ? '#856404' : '#721c24';
+                        const bg    = pct >= 80 ? '#d4edda' : pct >= 60 ? '#fff3cd' : '#f8d7da';
+                        return `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td><strong>${s.name}</strong></td>
+                            <td style="text-align:center;color:#155724;font-weight:bold;">${s.present}</td>
+                            <td style="text-align:center;color:#721c24;font-weight:bold;">${s.absent}</td>
+                            <td style="text-align:center;">
+                                <span style="background:${bg};color:${color};padding:3px 10px;border-radius:12px;font-weight:bold;">${pct}%</span>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+
+            <h4 style="color:#c0392b;margin:20px 0 12px;">📅 Chi tiết từng buổi</h4>
+            <table>
+                <thead>
+                    <tr><th>Ngày</th><th style="text-align:center;">✅ Có mặt</th><th style="text-align:center;">❌ Vắng</th><th>Hành động</th></tr>
+                </thead>
+                <tbody>
+                    ${dayData.map(d => `
+                        <tr>
+                            <td>${String(d.day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}</td>
+                            <td style="text-align:center;color:#155724;font-weight:bold;">${d.presentCount}</td>
+                            <td style="text-align:center;color:#721c24;font-weight:bold;">${d.absentCount}</td>
+                            <td>
+                                <button class="btn-blue btn-sm" onclick="loadHistoryDay(${year},${month},${d.day})">Xem & Sửa</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p style="color:red;">${e.message}</p>`;
+    }
+}
+
+function loadHistoryDay(year, month, day) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    document.getElementById('attendanceDatePicker').value = dateStr;
+    switchTab('attendance', document.getElementById('tabBtnAttendance'));
+    loadAttendanceTab();
+}
+
+// ===== SỬA LỚP =====
+async function saveClassEdit() {
+    const classId   = document.getElementById('editClassId').value;
+    const name      = document.getElementById('editClassName').value.trim();
+    const schedule  = document.getElementById('editSchedule').value.trim();
+    const startDate = document.getElementById('editStartDate').value;
+    const editMsg   = document.getElementById('editMessage');
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/classes/${classId}`, {
+            method: 'PUT', headers,
+            body: JSON.stringify({ name: name || null, schedule: schedule || null, startDate: startDate || null })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Cập nhật thất bại');
+        editMsg.textContent = '✅ Cập nhật thành công!';
+        editMsg.className = 'message success'; editMsg.style.display = 'block';
+        await loadClasses();
+    } catch (err) {
+        editMsg.textContent = '❌ ' + err.message;
+        editMsg.className = 'message error'; editMsg.style.display = 'block';
+    }
+}
+
+// ===== DUYỆT / TỪ CHỐI =====
+async function approveEnrollment(enrollmentId, classId) {
+    if (!confirm('Chấp nhận học sinh này?')) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/enrollments/${enrollmentId}/approve`, { method: 'POST', headers });
+        if (!res.ok) throw new Error('Duyệt thất bại');
+        showGlobalMsg('✅ Đã chấp nhận học sinh', 'success');
+        await loadStudents(classId); await loadClasses();
+    } catch (err) { showGlobalMsg('❌ ' + err.message, 'error'); }
+}
+
+async function rejectEnrollment(enrollmentId, classId) {
+    if (!confirm('Từ chối yêu cầu này?')) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/enrollments/${enrollmentId}/reject`, { method: 'POST', headers });
+        if (!res.ok) throw new Error('Từ chối thất bại');
+        showGlobalMsg('✅ Đã từ chối yêu cầu', 'success');
+        await loadStudents(classId); await loadClasses();
+    } catch (err) { showGlobalMsg('❌ ' + err.message, 'error'); }
+}
+
+// ===== ĐƠN KHÔI PHỤC =====
+async function loadRestoreRequests() {
+    const container = document.getElementById('restoreRequests');
+    container.innerHTML = '<p style="text-align:center;color:#777;">Đang tải...</p>';
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/attendance/restore-requests`, { headers });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        if (!data || !data.length) {
+            container.innerHTML = '<div style="text-align:center;padding:30px;color:#aaa;"><div style="font-size:2em;">📭</div><p>Không có đơn khôi phục nào đang chờ.</p></div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+                <span style="background:#fff3cd;color:#856404;padding:6px 14px;border-radius:8px;font-weight:bold;">⏳ ${data.length} đơn chờ duyệt</span>
+                <button class="btn-green btn-sm" onclick="bulkApprove()">✔ Duyệt tất cả</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" onchange="toggleAllRestore(this)"></th>
+                        <th>#</th><th>Học sinh</th><th>Lớp</th><th>Ngày vắng</th><th>Lý do</th><th>Ngày gửi</th><th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map((r, i) => `
+                        <tr>
+                            <td><input type="checkbox" class="restore-cb" value="${r.id}"></td>
+                            <td>${i+1}</td>
+                            <td><strong>${r.studentName}</strong><br><span style="color:#888;font-size:0.82em;">${r.studentEmail||''}</span></td>
+                            <td>Lớp ${r.classId || '—'}</td>
+                            <td>${r.date ? new Date(r.date).toLocaleDateString('vi-VN') : '—'}</td>
+                            <td style="max-width:180px;font-size:0.9em;">${r.restoreReason || '—'}</td>
+                            <td style="font-size:0.85em;">${r.requestDate ? new Date(r.requestDate).toLocaleDateString('vi-VN') : '—'}</td>
+                            <td style="white-space:nowrap;">
+                                <button class="btn-green btn-sm" onclick="approveRestore(${r.id})">✔ Duyệt</button>
+                                <button class="btn-sm" style="background:#e74c3c;color:white;margin-left:4px;" onclick="rejectRestore(${r.id})">✘ Từ chối</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p style="color:red;">${e.message}</p>`;
+    }
+}
+
+function toggleAllRestore(cb) {
+    document.querySelectorAll('.restore-cb').forEach(c => c.checked = cb.checked);
+}
+
+async function bulkApprove() {
+    const ids = [...document.querySelectorAll('.restore-cb:checked')].map(c => parseInt(c.value));
+    if (!ids.length) { alert('Chọn ít nhất một đơn'); return; }
+    if (!confirm(`Duyệt ${ids.length} đơn đã chọn?`)) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/attendance/requests/approve-bulk`, {
+            method: 'POST', headers, body: JSON.stringify({ requestIds: ids })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        await loadRestoreRequests();
+    } catch (e) { alert(e.message); }
+}
+
+async function approveRestore(id) {
+    if (!confirm('Duyệt yêu cầu này?')) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/attendance/requests/${id}/approve`, { method: 'POST', headers });
+        if (!res.ok) throw new Error(await res.text());
+        await loadRestoreRequests();
+    } catch (e) { alert(e.message); }
+}
+
+async function rejectRestore(id) {
+    if (!confirm('Từ chối yêu cầu này?')) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/teacher/attendance/requests/${id}/reject`, { method: 'POST', headers });
+        if (!res.ok) throw new Error(await res.text());
+        await loadRestoreRequests();
+    } catch (e) { alert(e.message); }
+}
+</script>
+</body>
+</html>
