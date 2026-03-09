@@ -1,9 +1,79 @@
 // src/features/teacher/components/ClassModal.tsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTeacherApi } from '../hooks/useTeacherApi';
 import type { ClassInfo } from '../TeacherDashboard';
 
 type ModalTab = 'students' | 'attendance' | 'history' | 'edit';
+
+// ── Attendance lock helpers ────────────────────────────────────────────────────
+
+const SLOT_START: Record<number, { h: number; m: number }> = {
+  1: { h: 7,  m: 15 },
+  2: { h: 9,  m: 25 },
+  3: { h: 12, m: 0  },
+  4: { h: 14, m: 10 },
+  5: { h: 16, m: 20 },
+  6: { h: 18, m: 30 },
+  7: { h: 20, m: 30 },
+};
+const ATTENDANCE_WINDOW = 30; // phút
+
+const DAY_MAP: Record<string, number> = {
+  'thứ 2': 1, 'thu 2': 1, 't2': 1,
+  'thứ 3': 2, 'thu 3': 2, 't3': 2,
+  'thứ 4': 3, 'thu 4': 3, 't4': 3,
+  'thứ 5': 4, 'thu 5': 4, 't5': 4,
+  'thứ 6': 5, 'thu 6': 5, 't6': 5,
+  'thứ 7': 6, 'thu 7': 6, 't7': 6,
+  'cn': 0, 'chủ nhật': 0,
+};
+
+/** Parse "Thứ 2, Thứ 4 – Slot 2" → [{ dow, slotNum }] */
+function parseSchedule(raw: string): { dow: number; slotNum: number }[] {
+  if (!raw) return [];
+  const lower = raw.toLowerCase();
+  const result: { dow: number; slotNum: number }[] = [];
+  const segments = lower.split(/[;|\/]+/);
+  for (const seg of segments) {
+    const dows: number[] = [];
+    for (const [k, v] of Object.entries(DAY_MAP)) {
+      if (seg.includes(k)) dows.push(v);
+    }
+    const slotMatch = seg.match(/slot\s*([1-7])/i);
+    const slotNum = slotMatch ? parseInt(slotMatch[1]) : 0;
+    if (dows.length > 0 && slotNum > 0) dows.forEach(dow => result.push({ dow, slotNum }));
+  }
+  if (result.length === 0) {
+    const dows: number[] = [];
+    for (const [k, v] of Object.entries(DAY_MAP)) {
+      if (lower.includes(k)) dows.push(v);
+    }
+    const slotMatch = lower.match(/slot\s*([1-7])/i);
+    const slotNum = slotMatch ? parseInt(slotMatch[1]) : 0;
+    if (dows.length > 0 && slotNum > 0) dows.forEach(dow => result.push({ dow, slotNum }));
+  }
+  return result;
+}
+
+type AttLockStatus = 'not-today' | 'not-started' | 'open' | 'locked';
+
+/** Tính trạng thái cửa sổ điểm danh dựa trên schedule string + giờ hiện tại */
+function getAttLockStatus(schedule: string, now: Date): AttLockStatus {
+  const todayDow = now.getDay();
+  const parsed = parseSchedule(schedule);
+  const todayEntry = parsed.find(p => p.dow === todayDow);
+  if (!todayEntry) return 'not-today';
+
+  const start = SLOT_START[todayEntry.slotNum];
+  if (!start) return 'not-today';
+
+  const startMin = start.h * 60 + start.m;
+  const nowMin   = now.getHours() * 60 + now.getMinutes();
+
+  if (nowMin < startMin)                       return 'not-started';
+  if (nowMin <= startMin + ATTENDANCE_WINDOW)  return 'open';
+  return 'locked';
+}
 
 interface Props {
   classInfo: ClassInfo;
@@ -31,21 +101,30 @@ export default function ClassModal({ classInfo, onClose }: Props) {
   const classId = classInfo.id;
   const [tab, setTab] = useState<ModalTab>('students');
 
+  // Live clock — cập nhật mỗi 30s để tự động khoá/mở cửa sổ điểm danh
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const todayISO = now.toISOString().split('T')[0];
+  const attLockStatus = getAttLockStatus(classInfo.schedule ?? '', now);
+
   // Students
   const [students, setStudents] = useState<any[]>([]);
   const [studLoading, setStudLoading] = useState(true);
   const [globalMsg, setGlobalMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Attendance
-  const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
+  // Attendance — luôn cố định ngày hôm nay, không cho chọn ngày khác
+  const [attDate] = useState(todayISO);
   const [attStudents, setAttStudents] = useState<any[]>([]);
   const [attMap, setAttMap] = useState<Record<string, boolean>>({});
   const [attLoaded, setAttLoaded] = useState(false);
   const [attSaveMsg, setAttSaveMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // History
-  const now = new Date();
-  const [histMonth, setHistMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+  const [histMonth, setHistMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [histData, setHistData] = useState<any>(null);
   const [histLoading, setHistLoading] = useState(false);
 
@@ -288,16 +367,69 @@ export default function ClassModal({ classInfo, onClose }: Props) {
         {/* ── Tab: Attendance ── */}
         {tab === 'attendance' && (
           <div>
-            {/* Toolbar */}
+            {/* Lock status banner */}
+            {attLockStatus === 'not-today' && (
+              <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.3em' }}>📅</span>
+                <div>
+                  <div>Hôm nay không có lịch dạy lớp này.</div>
+                  <div style={{ fontSize: '0.85em', fontWeight: 400, color: '#94a3b8', marginTop: 2 }}>Điểm danh chỉ khả dụng đúng ngày có lịch học.</div>
+                </div>
+              </div>
+            )}
+            {attLockStatus === 'not-started' && (
+              <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#fef9c3', border: '1px solid #fde68a', color: '#92400e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.3em' }}>⏳</span>
+                <div>
+                  <div>Chưa đến giờ bắt đầu slot.</div>
+                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ điểm danh sẽ mở khi đến giờ slot và đóng sau {ATTENDANCE_WINDOW} phút.</div>
+                </div>
+              </div>
+            )}
+            {attLockStatus === 'locked' && (
+              <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.3em' }}>🔒</span>
+                <div>
+                  <div>Đã khoá điểm danh.</div>
+                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ {ATTENDANCE_WINDOW} phút đã qua. Liên hệ admin nếu cần chỉnh sửa.</div>
+                </div>
+              </div>
+            )}
+            {attLockStatus === 'open' && (
+              <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#dcfce7', border: '1px solid #86efac', color: '#14532d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.3em' }}>✅</span>
+                <div>
+                  <div>Đang trong cửa sổ điểm danh hôm nay ({new Date(todayISO).toLocaleDateString('vi-VN')}).</div>
+                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ sẽ đóng sau {ATTENDANCE_WINDOW} phút kể từ giờ bắt đầu slot.</div>
+                </div>
+              </div>
+            )}
+
+            {/* Toolbar — chỉ hiện khi open */}
             <div style={{ background: '#fff8f0', border: '1px solid #ffd8a8', borderRadius: 8, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <label style={{ fontWeight: 600, color: '#555', fontSize: '0.9em' }}>📅 Ngày điểm danh</label>
-                <input type="date" value={attDate} onChange={e => { setAttDate(e.target.value); setAttLoaded(false); }} style={{ padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: '0.95em' }} />
+                <div style={{ padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: '0.95em', background: '#f8fafc', color: '#374151', fontWeight: 600 }}>
+                  {new Date(todayISO).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </div>
               </div>
               <button style={{ padding: '9px 14px', background: '#3498db', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={loadAttendance}>🔍 Tải danh sách</button>
-              <button style={{ padding: '9px 14px', background: '#27ae60', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={saveAttendance}>💾 Lưu điểm danh</button>
-              <button style={{ padding: '9px 14px', background: '#95a5a6', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={() => checkAll(true)}>✔ Tất cả có mặt</button>
-              <button style={{ padding: '9px 14px', background: '#95a5a6', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={() => checkAll(false)}>✘ Tất cả vắng</button>
+              <button
+                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#27ae60' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
+                onClick={attLockStatus === 'open' ? saveAttendance : undefined}
+                disabled={attLockStatus !== 'open'}
+                title={attLockStatus !== 'open' ? 'Chỉ được lưu điểm danh trong cửa sổ 30 phút' : ''}
+              >💾 Lưu điểm danh</button>
+              <button
+                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
+                onClick={attLockStatus === 'open' ? () => checkAll(true) : undefined}
+                disabled={attLockStatus !== 'open'}
+              >✔ Tất cả có mặt</button>
+              <button
+                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
+                onClick={attLockStatus === 'open' ? () => checkAll(false) : undefined}
+                disabled={attLockStatus !== 'open'}
+              >✘ Tất cả vắng</button>
             </div>
 
             {/* Stats */}
@@ -334,12 +466,13 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                       <td style={tdStyle}><strong>{s.studentName}</strong></td>
                       <td style={{ ...tdStyle, color: '#666' }}>{s.email || '—'}</td>
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
-                        <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <label style={{ cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <input
                             type="checkbox"
                             checked={attMap[s.studentId] ?? false}
-                            onChange={e => setAttMap(prev => ({ ...prev, [s.studentId]: e.target.checked }))}
-                            style={{ width: 18, height: 18, cursor: 'pointer' }}
+                            onChange={e => attLockStatus === 'open' && setAttMap(prev => ({ ...prev, [s.studentId]: e.target.checked }))}
+                            disabled={attLockStatus !== 'open'}
+                            style={{ width: 18, height: 18, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
                           />
                           <span>{attMap[s.studentId] ? '✅' : '❌'}</span>
                         </label>
@@ -422,15 +555,7 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#155724', fontWeight: 'bold' }}>{d.presentCount}</td>
                         <td style={{ ...tdStyle, textAlign: 'center', color: '#721c24', fontWeight: 'bold' }}>{d.absentCount}</td>
                         <td style={tdStyle}>
-                          <button
-                            style={{ padding: '5px 12px', background: '#3498db', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                            onClick={() => {
-                              const dateStr = `${histData.year}-${String(histData.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
-                              setAttDate(dateStr);
-                              setAttLoaded(false);
-                              setTab('attendance');
-                            }}
-                          >Xem & Sửa</button>
+                          <span style={{ fontSize: '0.85em', color: '#94a3b8' }}>—</span>
                         </td>
                       </tr>
                     ))}
