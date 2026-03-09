@@ -146,3 +146,4 @@ D:\1_Hoc\StudentManagement\obj\Debug\net8.0\StudentManagement.xml
 D:\1_Hoc\StudentManagement\obj\Debug\net8.0\StudentManagement.pdb
 D:\1_Hoc\StudentManagement\obj\Debug\net8.0\StudentManagement.genruntimeconfig.cache
 D:\1_Hoc\StudentManagement\obj\Debug\net8.0\ref\StudentManagement.dll
+D:\1_Hoc\StudentManagement\obj\Debug\net8.0\StudentManagement.sourcelink.json
