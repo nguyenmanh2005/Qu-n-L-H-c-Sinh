@@ -173,6 +173,18 @@
         <member name="M:StudentManagement.Migrations.UpdateModel.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:StudentManagement.Migrations.AddAssignments">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddAssignments.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddAssignments.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.AddAssignments.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:StudentManagement.Repositories.Interfaces.IStudentRepository">
             <summary>
             Tất cả thao tác đọc/ghi dữ liệu liên quan đến học sinh.

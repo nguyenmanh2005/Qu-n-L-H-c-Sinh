@@ -34,7 +34,7 @@ export default function AdminDashboard() {
           <div className="h-px bg-gradient-to-r from-indigo-200 via-violet-200 to-transparent mt-6" />
         </div>
 
-       
+
         {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {stats.map((s) => (
             <div

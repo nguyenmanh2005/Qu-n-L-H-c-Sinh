@@ -163,6 +163,7 @@ builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentService,    StudentService>();
 builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 
 
 // Repositories
@@ -188,7 +189,8 @@ app.UseSwaggerUI(c =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers().RequireCors("AllowAll");
-
+app.UseStaticFiles();
+app.UseStaticFiles();
 // ================= SEED ROLES + ADMIN + SCHEMA =================
 using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedAsync(scope.ServiceProvider);
