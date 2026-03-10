@@ -11,9 +11,10 @@ import StudentDashboard from '@/features/student/StudentDashboard';
 import TeacherDashboard from '@/features/teacher/TeacherDashboard';
 
 // Admin pages
-import AdminDashboard from '@/features/admin/AdminDashboard'; // trang tổng quan admin (tạo file này sau nếu cần)
+import AdminDashboard from '@/features/admin/AdminDashboard';
 import UserManagement from '@/features/admin/UserManagement';
-import ClassManagement from '@/features/admin/ClassManagement'; // sẽ tạo tiếp theo
+import ClassManagement from '@/features/admin/ClassManagement';
+import AdminReports from '@/features/admin/AdminReports';
 
 const router = createBrowserRouter([
   // Trang công khai (không cần auth)
@@ -43,10 +44,10 @@ const router = createBrowserRouter([
             path: '/admin',
             element: <ProtectedRoute allowedRoles={['Admin']} />,
             children: [
-              // Trang tổng quan Admin (có thể redirect hoặc hiển thị dashboard admin)
+              // Trang tổng quan Admin
               {
                 index: true,
-                element: <Navigate to="/admin/users" replace />, // hoặc <AdminDashboard />
+                element: <AdminDashboard />,
               },
 
               // Quản lý người dùng
@@ -54,6 +55,9 @@ const router = createBrowserRouter([
 
               // Quản lý lớp học
               { path: 'classes', element: <ClassManagement /> },
+
+              // Báo cáo
+              { path: 'reports', element: <AdminReports /> },
             ],
           },
         ],

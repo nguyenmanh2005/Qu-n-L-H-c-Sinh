@@ -2,19 +2,19 @@
 import React from 'react';
 
 export default function AdminDashboard() {
-  const stats = [
-    { label: 'Người dùng', value: '—', icon: '👤', color: 'from-violet-500 to-purple-600', light: 'bg-violet-50 text-violet-700' },
-    { label: 'Lớp học',    value: '—', icon: '🏫', color: 'from-emerald-500 to-teal-600',  light: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Giáo viên',  value: '—', icon: '👨‍🏫', color: 'from-sky-500 to-blue-600',     light: 'bg-sky-50 text-sky-700' },
-    { label: 'Học sinh',   value: '—', icon: '🎓', color: 'from-amber-500 to-orange-500',  light: 'bg-amber-50 text-amber-700' },
-  ];
+  // const stats = [
+  //   { label: 'Người dùng', value: '—', icon: '👤', color: 'from-violet-500 to-purple-600', light: 'bg-violet-50 text-violet-700' },
+  //   { label: 'Lớp học',    value: '—', icon: '🏫', color: 'from-emerald-500 to-teal-600',  light: 'bg-emerald-50 text-emerald-700' },
+  //   { label: 'Giáo viên',  value: '—', icon: '👨‍🏫', color: 'from-sky-500 to-blue-600',     light: 'bg-sky-50 text-sky-700' },
+  //   { label: 'Học sinh',   value: '—', icon: '🎓', color: 'from-amber-500 to-orange-500',  light: 'bg-amber-50 text-amber-700' },
+  // ];
 
-  const actions = [
-    { label: 'Tạo người dùng mới', desc: 'Thêm học sinh, giáo viên hoặc admin', icon: '➕', color: 'border-violet-200 hover:border-violet-400 hover:bg-violet-50' },
-    { label: 'Tạo lớp học',        desc: 'Thiết lập lớp và phân công giáo viên',  icon: '🏫', color: 'border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50' },
-    { label: 'Phân công lịch học',  desc: 'Cập nhật slot và ngày học cho lớp',    icon: '📅', color: 'border-sky-200 hover:border-sky-400 hover:bg-sky-50' },
-    { label: 'Quản lý role',        desc: 'Gán quyền hạn cho người dùng',         icon: '🔑', color: 'border-amber-200 hover:border-amber-400 hover:bg-amber-50' },
-  ];
+  // const actions = [
+  //   { label: 'Tạo người dùng mới', desc: 'Thêm học sinh, giáo viên hoặc admin', icon: '➕', color: 'border-violet-200 hover:border-violet-400 hover:bg-violet-50' },
+  //   { label: 'Tạo lớp học',        desc: 'Thiết lập lớp và phân công giáo viên',  icon: '🏫', color: 'border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50' },
+  //   { label: 'Phân công lịch học',  desc: 'Cập nhật slot và ngày học cho lớp',    icon: '📅', color: 'border-sky-200 hover:border-sky-400 hover:bg-sky-50' },
+  //   { label: 'Quản lý role',        desc: 'Gán quyền hạn cho người dùng',         icon: '🔑', color: 'border-amber-200 hover:border-amber-400 hover:bg-amber-50' },
+  // ];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
@@ -34,8 +34,8 @@ export default function AdminDashboard() {
           <div className="h-px bg-gradient-to-r from-indigo-200 via-violet-200 to-transparent mt-6" />
         </div>
 
-        {/* ── Stats ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+       
+        {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {stats.map((s) => (
             <div
               key={s.label}
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* ── Quick Actions ── */}
+       
         <div className="mb-6">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Thao tác nhanh</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* ── Footer note ── */}
+        
         <div className="mt-10 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-start gap-3">
           <span className="text-indigo-400 text-lg mt-0.5 flex-shrink-0">💡</span>
           <div>
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
               <strong className="font-bold">Quản lý Lớp</strong>.
             </div>
           </div>
-        </div>
+        </div> */}
 
       </div>
     </div>

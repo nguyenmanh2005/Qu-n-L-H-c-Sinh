@@ -149,6 +149,30 @@
         <member name="M:StudentManagement.Migrations.AddUserIdToStudentTeacher.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:StudentManagement.Migrations.UpdateSomething">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateSomething.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateSomething.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateSomething.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:StudentManagement.Migrations.UpdateModel">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateModel.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateModel.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:StudentManagement.Migrations.UpdateModel.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:StudentManagement.Repositories.Interfaces.IStudentRepository">
             <summary>
             Tất cả thao tác đọc/ghi dữ liệu liên quan đến học sinh.
@@ -176,10 +200,10 @@
             </summary>
         </member>
         <member name="M:StudentManagement.Utils.SlotDefinition.Get(System.Int32)">
-            <summary>Lấy Slot theo số thứ tự (1–7). Trả về null nếu không hợp lệ.</summary>
+            Lấy Slot theo số thứ tự (1–7). Trả về null nếu không hợp lệ.
         </member>
         <member name="M:StudentManagement.Utils.SlotDefinition.IsValid(System.Int32)">
-            <summary>Kiểm tra slotNumber có hợp lệ không.</summary>
+            Kiểm tra slotNumber có hợp lệ không.
         </member>
     </members>
 </doc>

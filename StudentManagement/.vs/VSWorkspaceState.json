@@ -1,6 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Controllers",
+    "\\DTOs",
+    "\\Entities",
+    "\\Services",
+    "\\Services\\Interfaces"
   ],
+  "SelectedNode": "\\Entities\\Class.cs",
   "PreviewInSolutionExplorer": false
 }

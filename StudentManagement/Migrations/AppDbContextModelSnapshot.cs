@@ -155,6 +155,49 @@ namespace StudentManagement.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("StudentManagement.Entities.Attendance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool?>("Present")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RestoreReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("RestoreRequested")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RestoreStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReviewedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StudentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Attendances");
+                });
+
             modelBuilder.Entity("StudentManagement.Entities.Class", b =>
                 {
                     b.Property<int>("Id")
@@ -271,6 +314,10 @@ namespace StudentManagement.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClassCount")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FullName")
                         .IsRequired()

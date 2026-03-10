@@ -5,6 +5,8 @@ using StudentManagement.DTOs;
 using StudentManagement.Services.Interfaces;
 using StudentManagement.Data;
 using StudentManagement.Utils;
+using Microsoft.AspNetCore.Identity;
+using StudentManagement.Entities;
 
 namespace StudentManagement.Controllers;
 
@@ -139,5 +141,85 @@ public class AdminController : ControllerBase
     {
         var result = await _classService.RemoveEnrollmentAsync(enrollmentId, context);
         return result.Success ? Ok(result.Message) : BadRequest(result.Message);
+    }
+        // ── ATTENDANCE MANAGEMENT (Admin không bị giới hạn ngày) ────────────────
+
+    [HttpGet("classes/{classId}/attendance")]
+    public async Task<IActionResult> GetAttendance(
+        int classId,
+        [FromQuery] DateTime? date,
+        [FromServices] AppDbContext context,
+        [FromServices] UserManager<User> userManager)
+    {
+        var cls = context.Classes.FirstOrDefault(c => c.Id == classId);
+        if (cls == null) return NotFound("Không tìm thấy lớp");
+
+        var targetDate = (date ?? DateTime.Now).Date;
+        var dayStart   = targetDate;
+        var dayEnd     = targetDate.AddDays(1);
+
+        var enrollments = context.Set<Enrollment>()
+            .Where(e => e.ClassId == classId && e.Status == "Approved")
+            .ToList();
+
+        var atts = context.Set<Attendance>()
+            .Where(a => a.ClassId == classId && a.Date >= dayStart && a.Date < dayEnd)
+            .ToList();
+
+        var result = new List<object>();
+        foreach (var e in enrollments)
+        {
+            var user = await userManager.FindByIdAsync(e.StudentId);
+            var att  = atts.FirstOrDefault(a => a.StudentId == e.StudentId);
+            result.Add(new
+            {
+                studentId   = e.StudentId,
+                studentName = user?.FullName ?? user?.UserName ?? "Không rõ",
+                studentEmail = user?.Email,
+                attendanceId = att?.Id,
+                present     = att?.Present ?? false,
+            });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("classes/{classId}/attendance")]
+    public async Task<IActionResult> SaveAttendance(
+        int classId,
+        [FromBody] SaveAttendanceDto dto,
+        [FromServices] AppDbContext context)
+    {
+        var cls = context.Classes.FirstOrDefault(c => c.Id == classId);
+        if (cls == null) return NotFound("Không tìm thấy lớp");
+
+        var targetDate = dto.Date.Date;
+        var dayStart   = targetDate;
+        var dayEnd     = targetDate.AddDays(1);
+
+        foreach (var entry in dto.Entries)
+        {
+            var existing = context.Set<Attendance>()
+                .FirstOrDefault(a => a.ClassId == classId && a.StudentId == entry.StudentId
+                                  && a.Date >= dayStart && a.Date < dayEnd);
+            if (existing != null)
+            {
+                existing.Present = entry.Present;
+            }
+            else
+            {
+                context.Set<Attendance>().Add(new Attendance
+                {
+                    StudentId        = entry.StudentId,
+                    ClassId          = classId,
+                    Date             = targetDate,
+                    Present          = entry.Present,
+                    RestoreRequested = false,
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
+        return Ok(new { message = "Đã lưu điểm danh" });
     }
 }
