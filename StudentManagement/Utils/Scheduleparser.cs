@@ -8,6 +8,9 @@ public static class ScheduleParser
 {
     private static readonly Regex TimeRangeRegex =
         new(@"(\d{1,2})[:\.](\d{2})\s*[-–—]\s*(\d{1,2})[:\.](\d{2})", RegexOptions.Compiled);
+        // Tìm giờ dạng "09:25 - 11:25" hoặc "09.25–11.25"
+        // \d{1,2} = 1-2 chữ số (giờ)
+        // \d{2}   = đúng 2 chữ số (phút)
 
     private static readonly Regex TimeSingleRegex =
         new(@"(\d{1,2})[:\.](\d{2})", RegexOptions.Compiled);
@@ -19,6 +22,8 @@ public static class ScheduleParser
     // Nhận diện "slot 1" … "slot 7" trong chuỗi lịch
     private static readonly Regex SlotRegex =
         new(@"\bslot\s*([1-7])\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // Tìm "slot 1" đến "slot 7" trong chuỗi
+        // IgnoreCase → "Slot 2" hay "SLOT 2" đều tìm được  
 
     private static readonly (string Key, int Day)[] DayMap =
     {

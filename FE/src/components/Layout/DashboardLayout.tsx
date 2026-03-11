@@ -15,6 +15,7 @@ export default function DashboardLayout() {
         { label: 'Trang chủ', path: '/admin', icon: '🏠' },
         { label: 'Quản lý User', path: '/admin/users', icon: '👥' },
         { label: 'Quản lý Lớp', path: '/admin/classes', icon: '📚' },
+        { label: 'Bài tập & Điểm', path: '/admin/grades', icon: '📝' },
         { label: 'Báo cáo', path: '/admin/reports', icon: '📊' },
       ];
     } else if (role === 'Teacher') {
@@ -30,6 +31,7 @@ export default function DashboardLayout() {
         { label: 'Lớp học của tôi', path: '/student/classes', icon: '📚' },
         { label: 'Điểm danh cá nhân', path: '/student/attendance', icon: '📅' },
         { label: 'Gửi đơn khôi phục', path: '/student/restore-request', icon: '📝' },
+        { label: 'Bài tập & Điểm', path: '/student/grades', icon: '🏆' },
       ];
     }
     return [];

@@ -13,10 +13,6 @@ using System.Text;
 using System.Security.Claims;
 using System.Reflection;
 using System.IO;
-using StudentManagement.Repositories;
-using StudentManagement.Repositories.Interfaces;
-using StudentManagement.Services;
-using StudentManagement.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -155,24 +151,26 @@ builder.Services.AddCors(options =>
 });
 
 // ================= REPOSITORIES =================
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<IUserRepository,       UserRepository>();
+builder.Services.AddScoped<IClassRepository,      ClassRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IStudentRepository,    StudentRepository>();
+builder.Services.AddScoped<ITeacherRepository,    TeacherRepository>();
 
 // ================= SERVICES =================
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IAdminUserService, AdminUserService>();
-builder.Services.AddScoped<IAdminClassService, AdminClassService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IStudentService,    StudentService>();
-// builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
-// builder.Services.AddScoped<ITeacherService,    TeacherService>();
+builder.Services.AddScoped<IAuthService,         AuthService>();
+builder.Services.AddScoped<IAdminUserService,    AdminUserService>();
+builder.Services.AddScoped<IAdminClassService,   AdminClassService>();
+builder.Services.AddScoped<IStudentService,      StudentService>();
+builder.Services.AddScoped<ITeacherService,      TeacherService>();
+builder.Services.AddScoped<IAssignmentService,   AssignmentService>();  // ← Assignment
 
 // ================= BUILD =================
 var app = builder.Build();
 
 // ================= MIDDLEWARE =================
 app.UseCors("AllowAll");
+app.UseStaticFiles();   // ← phục vụ file upload (wwwroot/uploads/submissions)
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -188,91 +186,6 @@ app.MapControllers().RequireCors("AllowAll");
 
 // ================= SEED ROLES + ADMIN + SCHEMA =================
 using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<User>>();
-    var db = services.GetRequiredService<AppDbContext>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
-
-    try
-    {
-        string[] roles = { "Admin", "Teacher", "Student" };
-        foreach (var role in roles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-                await roleManager.CreateAsync(new IdentityRole(role));
-        }
-
-        var adminEmail = "admin@gmail.com";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-        if (adminUser == null)
-        {
-            var newAdmin = new User
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true
-            };
-
-            var result = await userManager.CreateAsync(newAdmin, "Admin@123");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(newAdmin, "Admin");
-        }
-
-        // Schema sync
-        var conn = db.Database.GetDbConnection();
-        await conn.OpenAsync();
-        using (var cmd = conn.CreateCommand())
-        {
-            cmd.CommandText = @"
-IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Teachers' AND COLUMN_NAME='UserId')
-    ALTER TABLE Teachers ADD UserId NVARCHAR(450) NULL;
-
-IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Students' AND COLUMN_NAME='UserId')
-    ALTER TABLE Students ADD UserId NVARCHAR(450) NULL;
-
-IF NOT EXISTS(SELECT * FROM SYSOBJECTS WHERE NAME='Attendances' AND XTYPE='U')
-BEGIN
-    CREATE TABLE Attendances (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        StudentId NVARCHAR(450) NULL,
-        ClassId INT NULL,
-        [Date] DATETIME2 NULL,
-        Present BIT NULL,
-        RestoreRequested BIT NULL,
-        RestoreReason NVARCHAR(MAX) NULL,
-        RestoreStatus NVARCHAR(50) NULL,
-        RequestDate DATETIME2 NULL,
-        ReviewedDate DATETIME2 NULL,
-        ReviewedBy NVARCHAR(450) NULL
-    );
-END";
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        // Sync users to Teachers/Students tables
-        var teacherUsers = await userManager.GetUsersInRoleAsync("Teacher");
-        foreach (var u in teacherUsers)
-        {
-            if (!db.Teachers.Any(t => t.UserId == u.Id))
-                db.Teachers.Add(new Teacher { FullName = u.FullName ?? u.UserName ?? u.Email ?? "Unknown", UserId = u.Id });
-        }
-
-        var studentUsers = await userManager.GetUsersInRoleAsync("Student");
-        foreach (var u in studentUsers)
-        {
-            if (!db.Students.Any(s => s.UserId == u.Id))
-                db.Students.Add(new Student { FullName = u.FullName ?? u.UserName ?? u.Email ?? "Unknown", UserId = u.Id });
-        }
-
-        await db.SaveChangesAsync();
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error during seed roles, admin or schema sync");
-    }
-}
+    await DbSeeder.SeedAsync(scope.ServiceProvider);
 
 app.Run();

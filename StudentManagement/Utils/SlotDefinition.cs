@@ -18,11 +18,11 @@ public static class SlotDefinition
         new Slot(7, "20:30", "22:30", "Slot 7 (20:30 – 22:30)"),
     };
 
-    /// <summary>Lấy Slot theo số thứ tự (1–7). Trả về null nếu không hợp lệ.</summary>
+    /// Lấy Slot theo số thứ tự (1–7). Trả về null nếu không hợp lệ.
     public static Slot? Get(int slotNumber)
         => All.FirstOrDefault(s => s.Number == slotNumber);
 
-    /// <summary>Kiểm tra slotNumber có hợp lệ không.</summary>
+    /// Kiểm tra slotNumber có hợp lệ không.
     public static bool IsValid(int slotNumber)
         => slotNumber >= 1 && slotNumber <= All.Count;
 }

@@ -29,4 +29,3 @@ export const registerApi = async (data: { username: string; email: string; passw
   return response.data;
 };
 
-// Có thể thêm các API khác sau này: logout, refresh token, v.v.

@@ -22,23 +22,26 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       token: null,
       user: null,
-
-      login: (token: string, user: User) => {
-        set({ token, user });
+      
+      // Hàm đăng nhập: lưu token và thông tin user vào state
+      login: (token: string, user: User) => { // Lưu token và user vào state
+        set({ token, user }); // Lưu token và user vào state
       },
 
+      // Hàm đăng xuất: xóa token và thông tin user khỏi state
       logout: () => {
         set({ token: null, user: null });
       },
 
+      // Hàm kiểm tra xem người dùng đã đăng nhập hay chưa
       isAuthenticated: () => !!get().token,
-
+      // Hàm lấy thông tin người dùng hiện tại
       getUser: () => get().user,
     }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        token: state.token,
+    {// Cấu hình persist để lưu trữ token và user vào localStorage
+      name: 'auth-storage', // Tên key trong localStorage
+      partialize: (state) => ({// Chỉ lưu token và user vào localStorage, không lưu các hàm
+        token: state.token,// Lưu token và user vào localStorage
         user: state.user,
       }),
     }

@@ -16,6 +16,6 @@ public interface IUserRepository
     Task<IdentityResult> RemoveFromRolesAsync(User user, IEnumerable<string> roles);
     Task<IList<string>> GetRolesAsync(User user);
     Task UpdateSecurityStampAsync(User user);
-    Task<bool> RoleExistsAsync(string roleName);   // ← thêm dòng này
+    Task<bool> RoleExistsAsync(string roleName);   
     IQueryable<User> Users { get; }
 }

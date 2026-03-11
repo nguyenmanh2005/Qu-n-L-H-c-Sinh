@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
+import AdminAttendanceModal from './AdminAttendanceModal';
 
 interface Class {
   id: number; name: string; code: string;
@@ -12,6 +13,10 @@ interface Student {
 }
 interface Teacher { id: string; userName: string; email: string; }
 interface SlotDef { slotNumber: number; label: string; timeStart: string; timeEnd: string; }
+interface UserRaw { id: string; userName: string; email: string; role: string; }
+interface ApiError {
+  response?: { data?: { message?: string } };
+}
 
 type Modal =
   | { type: 'none' } | { type: 'createClass' }
@@ -25,6 +30,10 @@ const DAY_OPTIONS = [
   { value: 'Chủ nhật', label: 'CN' },
 ];
 
+const getErrMsg = (e: unknown, fallback: string) =>
+  (e as ApiError)?.response?.data?.message ?? fallback;
+
+// Api 
 function useApi() {
   const token = useAuthStore((s) => s.token);
   return axios.create({ baseURL: 'http://localhost:5187/api', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
@@ -144,6 +153,7 @@ function buildScheduleString(days: string[], slot: number | '', room: string) {
 export default function ClassManagement() {
   const api = useApi();
   const [modal, setModal] = useState<Modal>({ type: 'none' });
+  const [attModal, setAttModal] = useState<{ classId: number; className: string } | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -173,7 +183,6 @@ export default function ClassManagement() {
       const res = await api.get('/admin/classes');
       const classList: Class[] = res.data || [];
       setClasses(classList);
-      // Load studentCount song song cho tất cả lớp
       const counts = await Promise.allSettled(
         classList.map(c => api.get(`/admin/classes/${c.id}/students`))
       );
@@ -189,32 +198,39 @@ export default function ClassManagement() {
     }
     catch { err('Lỗi tải danh sách lớp'); } finally { setLoading(false); }
   };
+
   const loadSlots = async () => {
     try { const res = await api.get('/admin/slots'); setSlots(res.data); } catch { err('Lỗi tải slot'); }
   };
+
   const loadTeachers = async () => {
-    try { const res = await api.get('/admin/users'); setTeachers(res.data.filter((u: any) => u.role === 'Teacher')); }
+    try {
+      const res = await api.get('/admin/users');
+      setTeachers((res.data as UserRaw[]).filter((u) => u.role === 'Teacher'));
+    }
     catch { err('Lỗi tải giáo viên'); setTeachers([]); }
   };
+
   const createClass = async () => {
     if (!newClass.name || !newClass.code) return err('Tên lớp và mã lớp bắt buộc');
     setLoading(true);
     try {
       await api.post('/admin/classes', { ...newClass, schedule: buildScheduleString(schedDays, schedSlot, schedRoom), slotNumber: schedSlot !== '' ? schedSlot : undefined });
       ok('Tạo lớp thành công!'); closeModal(); setNewClass({ name: '', code: '', teacherId: '' }); resetSched(); loadClasses();
-    } catch (e: any) { err(e.response?.data?.message || 'Lỗi tạo lớp'); } finally { setLoading(false); }
+    } catch (e) { err(getErrMsg(e, 'Lỗi tạo lớp')); } finally { setLoading(false); }
   };
+
   const deleteClass = async (cls: Class) => {
     if (!confirm(`Xóa lớp "${cls.name}"?`)) return;
     setLoading(true);
     try { await api.delete(`/admin/classes/${cls.id}`); ok('Đã xóa!'); loadClasses(); }
-    catch (e: any) { err(e.response?.data?.message || 'Lỗi'); } finally { setLoading(false); }
+    catch (e) { err(getErrMsg(e, 'Lỗi')); } finally { setLoading(false); }
   };
+
   const loadClassStudents = async (cls: Class) => {
     setClassStudents([]); setModal({ type: 'classDetail', cls });
     try {
       const res = await api.get(`/admin/classes/${cls.id}/students`);
-      // API có thể trả về array thẳng, hoặc { data: [...] }, hoặc { students: [...] }
       const raw = res.data;
       const list = Array.isArray(raw) ? raw
         : Array.isArray(raw?.data) ? raw.data
@@ -222,18 +238,19 @@ export default function ClassManagement() {
         : Array.isArray(raw?.items) ? raw.items
         : [];
       setClassStudents(list);
-      // Cập nhật studentCount đúng trong bảng
       setClasses(prev => prev.map(c => c.id === cls.id ? { ...c, studentCount: list.length } : c));
     }
     catch { err('Lỗi tải học sinh'); }
   };
+
   const removeStudent = async (enrollmentId: number, name: string) => {
     if (!confirm(`Xóa "${name}"?`)) return;
     try {
       await api.delete(`/admin/enrollments/${enrollmentId}`); ok(`Đã xóa "${name}"`);
       if (modal.type === 'classDetail') loadClassStudents(modal.cls);
-    } catch (e: any) { err(e.response?.data?.message || 'Lỗi'); }
+    } catch (e) { err(getErrMsg(e, 'Lỗi')); }
   };
+
   const assignTeacher = async () => {
     if (!selectedTeacherId) return err('Chọn giáo viên');
     if (modal.type !== 'assignTeacher') return;
@@ -241,8 +258,9 @@ export default function ClassManagement() {
     try {
       await api.put(`/admin/classes/${modal.cls.id}/assign-teacher`, { TeacherId: selectedTeacherId });
       ok('Gán thành công!'); closeModal(); setSelectedTeacherId(''); loadClasses();
-    } catch (e: any) { err(e.response?.data?.message || 'Lỗi'); } finally { setLoading(false); }
+    } catch (e) { err(getErrMsg(e, 'Lỗi')); } finally { setLoading(false); }
   };
+
   const updateSchedule = async () => {
     if (modal.type !== 'updateSchedule') return;
     if (schedDays.length === 0 && schedSlot === '') return err('Chọn ít nhất ngày hoặc slot');
@@ -250,7 +268,7 @@ export default function ClassManagement() {
     try {
       await api.put(`/admin/classes/${modal.cls.id}/schedule`, { schedule: buildScheduleString(schedDays, schedSlot, schedRoom), slotNumber: schedSlot !== '' ? schedSlot : undefined });
       ok('Cập nhật lịch thành công!'); closeModal(); resetSched(); loadClasses();
-    } catch (e: any) { err(e.response?.data?.message || 'Lỗi'); } finally { setLoading(false); }
+    } catch (e) { err(getErrMsg(e, 'Lỗi')); } finally { setLoading(false); }
   };
 
   useEffect(() => { loadClasses(); loadSlots(); }, []);
@@ -318,6 +336,7 @@ export default function ClassManagement() {
                         <Btn size="sm" variant="ghost" onClick={() => loadClassStudents(cls)}>HS</Btn>
                         <Btn size="sm" variant="purple" onClick={() => { loadTeachers(); setModal({ type: 'assignTeacher', cls }); }}>GV</Btn>
                         <Btn size="sm" variant="primary" onClick={() => { resetSched(); setModal({ type: 'updateSchedule', cls }); }}>📅</Btn>
+                        <Btn size="sm" variant="emerald" onClick={() => setAttModal({ classId: cls.id, className: cls.name })}>📋</Btn>
                         <Btn size="sm" variant="danger" onClick={() => deleteClass(cls)}>✕</Btn>
                       </div>
                     </td>
@@ -428,6 +447,14 @@ export default function ClassManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {attModal && (
+        <AdminAttendanceModal
+          classId={attModal.classId}
+          className={attModal.className}
+          onClose={() => setAttModal(null)}
+        />
       )}
     </div>
   );

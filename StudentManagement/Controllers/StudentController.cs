@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using StudentManagement.DTOs;
 using StudentManagement.Services.Interfaces;
 using System.Security.Claims;
-using StudentManagement.Utils;
 
 namespace StudentManagement.Controllers;
 
-/// <summary>
-/// API dành cho học sinh (role = Student).
-/// Controller này KHÔNG chứa business logic – tất cả ủy quyền cho IStudentService.
-/// </summary>
 [Authorize(Roles = "Student")]
 [ApiController]
 [Route("api/[controller]")]
@@ -23,11 +18,12 @@ public class StudentController : ControllerBase
         _studentService = studentService;
     }
 
-    // ════════════════════════════════════════════════
-    //  PROFILE
-    // ════════════════════════════════════════════════
+    private string GetUserId()
+        => User.FindFirstValue(ClaimTypes.NameIdentifier)
+           ?? throw new UnauthorizedAccessException("Không xác định được người dùng");
 
-    /// <summary>Lấy thông tin cá nhân của học sinh đang đăng nhập.</summary>
+    // ── Profile ──────────────────────────────────────────────────
+
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
@@ -35,16 +31,12 @@ public class StudentController : ControllerBase
         return profile is null ? NotFound("Không tìm thấy người dùng") : Ok(profile);
     }
 
-    // ════════════════════════════════════════════════
-    //  CLASSES
-    // ════════════════════════════════════════════════
+    // ── Classes ──────────────────────────────────────────────────
 
-    /// <summary>Danh sách lớp học đang tham gia (mọi trạng thái).</summary>
     [HttpGet("classes")]
     public async Task<IActionResult> GetMyClasses()
         => Ok(await _studentService.GetMyClassesAsync(GetUserId()));
 
-    /// <summary>Xem danh sách thành viên và giáo viên của lớp (chỉ khi đã được duyệt).</summary>
     [HttpGet("classes/{classId}/members")]
     public async Task<IActionResult> GetClassMembers(int classId)
     {
@@ -52,7 +44,6 @@ public class StudentController : ControllerBase
         return result is null ? Forbid() : Ok(result);
     }
 
-    /// <summary>Gửi yêu cầu tham gia lớp bằng mã lớp.</summary>
     [HttpPost("join-request")]
     public async Task<IActionResult> JoinClass([FromBody] JoinClassRequestDto dto)
     {
@@ -60,34 +51,24 @@ public class StudentController : ControllerBase
         return success ? Ok(new { message }) : BadRequest(new { message });
     }
 
-    // ════════════════════════════════════════════════
-    //  SCHEDULE
-    // ════════════════════════════════════════════════
+    // ── Schedule ─────────────────────────────────────────────────
 
-    /// <summary>Lịch học của học sinh – chỉ trả về lớp đã được duyệt (Approved).</summary>
     [HttpGet("schedule")]
     public async Task<IActionResult> GetMySchedule()
         => Ok(await _studentService.GetMyScheduleAsync(GetUserId()));
 
-    // ════════════════════════════════════════════════
-    //  ATTENDANCE
-    // ════════════════════════════════════════════════
+    // ── Attendance ───────────────────────────────────────────────
 
-    /// <summary>Toàn bộ lịch sử điểm danh của học sinh.</summary>
     [HttpGet("attendance")]
     public async Task<IActionResult> GetMyAttendance()
         => Ok(await _studentService.GetMyAttendanceAsync(GetUserId()));
 
-    /// <summary>Tổng hợp chuyên cần theo từng lớp (có tỉ lệ %).</summary>
     [HttpGet("attendance/summary")]
     public async Task<IActionResult> GetAttendanceSummary()
         => Ok(await _studentService.GetAttendanceSummaryAsync(GetUserId()));
 
-    // ════════════════════════════════════════════════
-    //  RESTORE REQUESTS
-    // ════════════════════════════════════════════════
+    // ── Restore Requests ─────────────────────────────────────────
 
-    /// <summary>Gửi đơn khôi phục điểm danh theo AttendanceId.</summary>
     [HttpPost("attendance/restore-request")]
     public async Task<IActionResult> RequestRestore([FromBody] RestoreAttendanceDto dto)
     {
@@ -95,7 +76,6 @@ public class StudentController : ControllerBase
         return success ? Ok(new { message }) : BadRequest(new { message });
     }
 
-    /// <summary>Gửi đơn khôi phục theo ClassId + Date (không cần AttendanceId).</summary>
     [HttpPost("attendance/restore-request-by")]
     public async Task<IActionResult> RequestRestoreByInfo([FromBody] RestoreAttendanceByInfoDto dto)
     {
@@ -103,19 +83,10 @@ public class StudentController : ControllerBase
         return success ? Ok(new { message }) : BadRequest(new { message });
     }
 
-    /// <summary>Huỷ đơn khôi phục đang ở trạng thái Pending.</summary>
     [HttpPost("attendance/restore-request/{attendanceId}/cancel")]
     public async Task<IActionResult> CancelRestore(int attendanceId)
     {
         var (success, message) = await _studentService.CancelRestoreAsync(GetUserId(), attendanceId);
         return success ? Ok(new { message }) : BadRequest(new { message });
     }
-
-    // ════════════════════════════════════════════════
-    //  PRIVATE HELPER
-    // ════════════════════════════════════════════════
-
-    private string GetUserId()
-        => User.FindFirstValue(ClaimTypes.NameIdentifier)
-           ?? throw new UnauthorizedAccessException("Không xác định được người dùng");
-}   
+}
