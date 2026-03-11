@@ -1,6 +1,7 @@
 // src/features/admin/AdminDashboard.tsx
 import React from 'react';
 
+
 export default function AdminDashboard() {
   // const stats = [
   //   { label: 'Người dùng', value: '—', icon: '👤', color: 'from-violet-500 to-purple-600', light: 'bg-violet-50 text-violet-700' },
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
             >
               <div className={`h-1.5 w-full bg-gradient-to-r ${s.color}`} />
               <div className="p-5">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3"> 
                   <span className="text-2xl leading-none">{s.icon}</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${s.light}`}>
                     {s.label}

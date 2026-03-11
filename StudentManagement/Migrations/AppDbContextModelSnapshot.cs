@@ -370,6 +370,9 @@ namespace StudentManagement.Migrations
                     b.Property<DateTime?>("GradedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("GradedBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsLate")
                         .HasColumnType("bit");
 

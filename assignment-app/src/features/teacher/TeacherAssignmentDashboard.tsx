@@ -328,6 +328,30 @@ function CreateAssignmentModal({ api, onClose }: {
 }
 
 // ── Grade Modal ───────────────────────────────────────────────
+type GradeLevel = 'D' | 'M' | 'P' | 'Refer' | '';
+
+const GRADE_OPTIONS: { value: GradeLevel; label: string; color: string; bg: string }[] = [
+  { value: 'D',     label: 'D',     color: '#1a5276', bg: '#d6eaf8' },
+  { value: 'M',     label: 'M',     color: '#155724', bg: '#d4edda' },
+  { value: 'P',     label: 'P',     color: '#856404', bg: '#fff3cd' },
+  { value: 'Refer', label: 'Refer', color: '#721c24', bg: '#f8d7da' },
+];
+
+function gradeBadge(g: GradeLevel) {
+  if (!g) return null;
+  const opt = GRADE_OPTIONS.find(o => o.value === g);
+  if (!opt) return null;
+  return (
+    <span style={{
+      background: opt.bg, color: opt.color,
+      padding: '2px 10px', borderRadius: 10,
+      fontWeight: 700, fontSize: '0.82em',
+    }}>
+      {opt.label}
+    </span>
+  );
+}
+
 function GradeModal({ assignment, api, onClose }: {
   assignment: AssignmentDto;
   api: ReturnType<typeof useApi>;
@@ -337,7 +361,10 @@ function GradeModal({ assignment, api, onClose }: {
   const [loading, setLoading]         = useState(true);
   const [grading, setGrading]         = useState<number | null>(null);
   const [score, setScore]             = useState('');
+  const [gradeLevel, setGradeLevel]   = useState<GradeLevel>('');
   const [feedback, setFeedback]       = useState('');
+
+  const isLocked = assignment.isExpired;
 
   useEffect(() => {
     api.get(`/teacher/assignments/${assignment.id}/submissions`)
@@ -345,30 +372,52 @@ function GradeModal({ assignment, api, onClose }: {
       .finally(() => setLoading(false));
   }, []);
 
+  const openGrading = (s: SubmissionDto) => {
+    if (grading === s.id) { setGrading(null); return; }
+    setGrading(s.id);
+    setScore(s.score?.toString() || '');
+    setGradeLevel((s.grade as GradeLevel) || '');
+    setFeedback(s.feedback || '');
+  };
+
   const submitGrade = async (submissionId: number) => {
-    const s = parseFloat(score);
-    if (isNaN(s) || s < 0 || s > 10) { alert('Điểm phải từ 0 đến 10'); return; }
+    const sc = score !== '' ? parseFloat(score) : null;
+    if (sc !== null && (isNaN(sc) || sc < 0 || sc > 10)) {
+      alert('Điểm số phải từ 0 đến 10'); return;
+    }
     try {
-      await api.post(`/teacher/assignments/submissions/${submissionId}/grade`, { score: s, feedback });
+      await api.post(`/teacher/assignments/submissions/${submissionId}/grade`, {
+        score: sc ?? null,
+        grade: gradeLevel || null,
+        feedback,
+      });
       const res = await api.get(`/teacher/assignments/${assignment.id}/submissions`);
       setSubmissions(res.data || []);
-      setGrading(null); setScore(''); setFeedback('');
+      setGrading(null); setScore(''); setGradeLevel(''); setFeedback('');
     } catch { alert('Lỗi khi chấm điểm'); }
   };
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{ ...S.card, width: 640, maxHeight: '80vh', overflow: 'auto', padding: '28px 32px' }}>
+      <div style={{ ...S.card, width: 660, maxHeight: '80vh', overflow: 'auto', padding: '28px 32px' }}>
         <h3 style={{ margin: '0 0 6px', color: C.text }}>📝 Chấm điểm</h3>
-        <p style={{ margin: '0 0 20px', color: C.textMuted, fontSize: '0.88em' }}>
+        <p style={{ margin: '0 0 4px', color: C.textMuted, fontSize: '0.88em' }}>
           {assignment.title} · {submissions.length} bài nộp
         </p>
 
-        {loading && <div style={{ textAlign: 'center', padding: 40, color: C.textMuted }}>Đang tải...</div>}
-
-        {!loading && submissions.length === 0 && (
-          <Empty text="Chưa có học sinh nào nộp bài" />
+        {isLocked && (
+          <div style={{
+            margin: '10px 0 16px', padding: '10px 14px', borderRadius: 8,
+            background: '#fee2e2', border: '1px solid #fca5a5',
+            color: '#991b1b', fontWeight: 600, fontSize: '0.88em',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            🔒 Bài tập đã đóng — chỉ xem, không thể sửa điểm.
+          </div>
         )}
+
+        {loading && <div style={{ textAlign: 'center', padding: 40, color: C.textMuted }}>Đang tải...</div>}
+        {!loading && submissions.length === 0 && <Empty text="Chưa có học sinh nào nộp bài" />}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {submissions.map(s => (
@@ -387,40 +436,76 @@ function GradeModal({ assignment, api, onClose }: {
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+
+                {/* Score + grade badge + button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {s.isGraded && grading !== s.id && (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.5em', fontWeight: 700, color: scoreColor(s.score!) }}>{s.score}</div>
-                      <div style={{ fontSize: '0.72em', color: C.textMuted }}>/10</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {s.score != null && (
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.5em', fontWeight: 700, color: scoreColor(s.score) }}>{s.score}</div>
+                          <div style={{ fontSize: '0.72em', color: C.textMuted }}>/10</div>
+                        </div>
+                      )}
+                      {gradeBadge((s.grade as GradeLevel) || '')}
                     </div>
                   )}
-                  <button
-                    style={S.btn(grading === s.id ? C.textMuted : C.teacher)}
-                    onClick={() => {
-                      if (grading === s.id) { setGrading(null); return; }
-                      setGrading(s.id); setScore(s.score?.toString() || ''); setFeedback(s.feedback || '');
-                    }}
-                  >
-                    {grading === s.id ? 'Hủy' : s.isGraded ? '✏️ Sửa điểm' : '+ Chấm điểm'}
-                  </button>
+                  {!isLocked && (
+                    <button
+                      style={S.btn(grading === s.id ? C.textMuted : C.teacher)}
+                      onClick={() => openGrading(s)}
+                    >
+                      {grading === s.id ? 'Hủy' : s.isGraded ? '✏️ Sửa điểm' : '+ Chấm điểm'}
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {grading === s.id && (
-                <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <div style={{ flex: '0 0 100px' }}>
-                    <label style={S.label}>Điểm (0-10)</label>
-                    <input type="number" min={0} max={10} step={0.5} style={S.input}
-                      value={score} onChange={e => setScore(e.target.value)} />
+              {/* Grading form */}
+              {grading === s.id && !isLocked && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    {/* Điểm số */}
+                    <div style={{ flex: '0 0 100px' }}>
+                      <label style={S.label}>Điểm số (0–10)</label>
+                      <input type="number" min={0} max={10} step={0.5} style={S.input}
+                        value={score} onChange={e => setScore(e.target.value)} />
+                    </div>
+
+                    {/* Xếp loại */}
+                    <div>
+                      <label style={S.label}>Xếp loại</label>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                        {GRADE_OPTIONS.map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setGradeLevel(gradeLevel === opt.value ? '' : opt.value)}
+                            style={{
+                              padding: '5px 12px', fontSize: '0.85em', fontWeight: 700,
+                              border: `2px solid ${gradeLevel === opt.value ? opt.color : '#ddd'}`,
+                              borderRadius: 6, cursor: 'pointer',
+                              background: gradeLevel === opt.value ? opt.bg : 'white',
+                              color: gradeLevel === opt.value ? opt.color : '#888',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Nhận xét */}
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                      <label style={S.label}>Nhận xét</label>
+                      <input style={S.input} placeholder="Tùy chọn..."
+                        value={feedback} onChange={e => setFeedback(e.target.value)} />
+                    </div>
+
+                    <button style={S.btn(C.success)} onClick={() => submitGrade(s.id)}>
+                      ✓ Lưu điểm
+                    </button>
                   </div>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <label style={S.label}>Nhận xét</label>
-                    <input style={S.input} placeholder="Tùy chọn..."
-                      value={feedback} onChange={e => setFeedback(e.target.value)} />
-                  </div>
-                  <button style={S.btn(C.success)} onClick={() => submitGrade(s.id)}>
-                    ✓ Lưu điểm
-                  </button>
                 </div>
               )}
             </div>

@@ -1,9 +1,9 @@
 // src/features/teacher/components/ClassModal.tsx
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useTeacherApi } from '../hooks/useTeacherApi';
 import type { ClassInfo } from '../TeacherDashboard';
 
-type ModalTab = 'students' | 'attendance' | 'history' | 'edit';
+type ModalTab = 'students' | 'attendance' | 'history';
 
 // ── Attendance lock helpers ────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ const SLOT_START: Record<number, { h: number; m: number }> = {
   6: { h: 18, m: 30 },
   7: { h: 20, m: 30 },
 };
-const ATTENDANCE_WINDOW = 30; // phút
+const ATTENDANCE_WINDOW = 30;
 
 const DAY_MAP: Record<string, number> = {
   'thứ 2': 1, 'thu 2': 1, 't2': 1,
@@ -28,7 +28,6 @@ const DAY_MAP: Record<string, number> = {
   'cn': 0, 'chủ nhật': 0,
 };
 
-/** Parse "Thứ 2, Thứ 4 – Slot 2" → [{ dow, slotNum }] */
 function parseSchedule(raw: string): { dow: number; slotNum: number }[] {
   if (!raw) return [];
   const lower = raw.toLowerCase();
@@ -57,21 +56,17 @@ function parseSchedule(raw: string): { dow: number; slotNum: number }[] {
 
 type AttLockStatus = 'not-today' | 'not-started' | 'open' | 'locked';
 
-/** Tính trạng thái cửa sổ điểm danh dựa trên schedule string + giờ hiện tại */
 function getAttLockStatus(schedule: string, now: Date): AttLockStatus {
   const todayDow = now.getDay();
   const parsed = parseSchedule(schedule);
   const todayEntry = parsed.find(p => p.dow === todayDow);
   if (!todayEntry) return 'not-today';
-
   const start = SLOT_START[todayEntry.slotNum];
   if (!start) return 'not-today';
-
   const startMin = start.h * 60 + start.m;
   const nowMin   = now.getHours() * 60 + now.getMinutes();
-
-  if (nowMin < startMin)                       return 'not-started';
-  if (nowMin <= startMin + ATTENDANCE_WINDOW)  return 'open';
+  if (nowMin < startMin)                      return 'not-started';
+  if (nowMin <= startMin + ATTENDANCE_WINDOW) return 'open';
   return 'locked';
 }
 
@@ -96,12 +91,13 @@ function Msg({ text, type }: { text: string; type: 'success' | 'error' }) {
   );
 }
 
+// ── Main ClassModal ───────────────────────────────────────────────────────────
+
 export default function ClassModal({ classInfo, onClose }: Props) {
   const api = useTeacherApi();
   const classId = classInfo.id;
   const [tab, setTab] = useState<ModalTab>('students');
 
-  // Live clock — cập nhật mỗi 30s để tự động khoá/mở cửa sổ điểm danh
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);
@@ -111,30 +107,20 @@ export default function ClassModal({ classInfo, onClose }: Props) {
   const todayISO = now.toISOString().split('T')[0];
   const attLockStatus = getAttLockStatus(classInfo.schedule ?? '', now);
 
-  // Students
   const [students, setStudents] = useState<any[]>([]);
   const [studLoading, setStudLoading] = useState(true);
   const [globalMsg, setGlobalMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Attendance — luôn cố định ngày hôm nay, không cho chọn ngày khác
   const [attDate] = useState(todayISO);
   const [attStudents, setAttStudents] = useState<any[]>([]);
   const [attMap, setAttMap] = useState<Record<string, boolean>>({});
   const [attLoaded, setAttLoaded] = useState(false);
   const [attSaveMsg, setAttSaveMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // History
   const [histMonth, setHistMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
   const [histData, setHistData] = useState<any>(null);
   const [histLoading, setHistLoading] = useState(false);
 
-  // Edit
-  const [editName, setEditName] = useState(classInfo.name || '');
-  const [editSchedule, setEditSchedule] = useState(classInfo.schedule || '');
-  const [editStartDate, setEditStartDate] = useState(classInfo.startDate ? classInfo.startDate.substring(0, 16) : '');
-  const [editMsg, setEditMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  // Load students on mount
   useEffect(() => { loadStudents(); }, [classId]);
 
   const showGlobal = (text: string, type: 'success' | 'error') => {
@@ -173,12 +159,10 @@ export default function ClassModal({ classInfo, onClose }: Props) {
   };
 
   const loadAttendance = async () => {
-    if (!attDate) { alert('Vui lòng chọn ngày'); return; }
     try {
       const studRes = await api.get(`/classes/${classId}/students`);
       const approved = (studRes.data.students || []).filter((s: any) => s.status === 'Approved');
       setAttStudents(approved);
-
       const dateISO = new Date(attDate + 'T00:00:00').toISOString();
       let map: Record<string, boolean> = {};
       try {
@@ -187,13 +171,10 @@ export default function ClassModal({ classInfo, onClose }: Props) {
       } catch {}
       setAttMap(map);
       setAttLoaded(true);
-    } catch (err) {
-      alert('Lỗi tải danh sách');
-    }
+    } catch { alert('Lỗi tải danh sách'); }
   };
 
   const saveAttendance = async () => {
-    if (!attDate) { alert('Chọn ngày trước khi lưu'); return; }
     if (!attStudents.length) { alert('Hãy tải danh sách trước'); return; }
     const entries = attStudents.map(s => ({ studentId: s.studentId, present: attMap[s.studentId] ?? false }));
     try {
@@ -225,10 +206,8 @@ export default function ClassModal({ classInfo, onClose }: Props) {
       const approved = (studRes.data.students || []).filter((s: any) => s.status === 'Approved');
       const [year, month] = histMonth.split('-').map(Number);
       const daysInMonth = new Date(year, month, 0).getDate();
-
       const studentMap: Record<string, { name: string; present: number; absent: number }> = {};
       approved.forEach((s: any) => { studentMap[s.studentId] = { name: s.studentName, present: 0, absent: 0 }; });
-
       const allDays = await Promise.all(
         Array.from({ length: daysInMonth }, (_, i) => i + 1).map(async d => {
           const dateISO = new Date(year, month - 1, d).toISOString();
@@ -238,7 +217,6 @@ export default function ClassModal({ classInfo, onClose }: Props) {
           } catch { return { day: d, recs: [] }; }
         })
       );
-
       const dayData: { day: number; presentCount: number; absentCount: number }[] = [];
       allDays.forEach(({ day, recs }) => {
         if (!recs.length) return;
@@ -250,24 +228,8 @@ export default function ClassModal({ classInfo, onClose }: Props) {
           }
         });
       });
-
       setHistData({ year, month, dayData, studentMap });
-    } finally {
-      setHistLoading(false);
-    }
-  };
-
-  const saveEdit = async () => {
-    try {
-      await api.put(`/classes/${classId}`, {
-        name: editName || null,
-        schedule: editSchedule || null,
-        startDate: editStartDate || null,
-      });
-      setEditMsg({ text: '✅ Cập nhật thành công!', type: 'success' });
-    } catch (err: any) {
-      setEditMsg({ text: '❌ ' + (err.message || 'Cập nhật thất bại'), type: 'error' });
-    }
+    } finally { setHistLoading(false); }
   };
 
   const tabBtnStyle = (active: boolean): React.CSSProperties => ({
@@ -291,8 +253,7 @@ export default function ClassModal({ classInfo, onClose }: Props) {
         padding: '40px 16px', overflowY: 'auto',
       }}
     >
-      <div style={{ background: 'white', borderRadius: 12, padding: 30, width: '100%', maxWidth: 760, position: 'relative' }}>
-        {/* Close */}
+      <div style={{ background: 'white', borderRadius: 12, padding: 30, width: '100%', maxWidth: 860, position: 'relative' }}>
         <button
           onClick={onClose}
           style={{ position: 'absolute', top: 14, right: 18, fontSize: '1.5em', cursor: 'pointer', background: 'none', border: 'none', color: '#666', padding: 0 }}
@@ -305,10 +266,9 @@ export default function ClassModal({ classInfo, onClose }: Props) {
         {/* Modal tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
           {([
-            { key: 'students', label: '👥 Học sinh' },
-            { key: 'attendance', label: '📋 Điểm danh' },
-            { key: 'history', label: '📊 Lịch sử' },
-            // { key: 'edit', label: '✏️ Sửa lớp' },
+            { key: 'students',    label: '👥 Học sinh' },
+            { key: 'attendance',  label: '📋 Điểm danh' },
+            { key: 'history',     label: '📊 Lịch sử' },
           ] as { key: ModalTab; label: string }[]).map(({ key, label }) => (
             <button key={key} style={tabBtnStyle(tab === key)} onClick={() => setTab(key)}>{label}</button>
           ))}
@@ -330,11 +290,7 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                 </p>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      {['#', 'Họ và tên', 'Email', 'Trạng thái', 'Ngày vào', 'Hành động'].map(h => (
-                        <th key={h} style={thStyle}>{h}</th>
-                      ))}
-                    </tr>
+                    <tr>{['#', 'Họ và tên', 'Email', 'Trạng thái', 'Ngày vào', 'Hành động'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {students.map((s, i) => (
@@ -356,9 +312,6 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 12, padding: 10, background: '#f0f8ff', borderRadius: 8, fontSize: '0.9em', color: '#555' }}>
-                  💡 Để điểm danh, chuyển sang tab <strong>📋 Điểm danh</strong>
-                </div>
               </>
             )}
           </div>
@@ -367,45 +320,31 @@ export default function ClassModal({ classInfo, onClose }: Props) {
         {/* ── Tab: Attendance ── */}
         {tab === 'attendance' && (
           <div>
-            {/* Lock status banner */}
             {attLockStatus === 'not-today' && (
               <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.3em' }}>📅</span>
-                <div>
-                  <div>Hôm nay không có lịch dạy lớp này.</div>
-                  <div style={{ fontSize: '0.85em', fontWeight: 400, color: '#94a3b8', marginTop: 2 }}>Điểm danh chỉ khả dụng đúng ngày có lịch học.</div>
-                </div>
+                <div><div>Hôm nay không có lịch dạy lớp này.</div><div style={{ fontSize: '0.85em', fontWeight: 400, color: '#94a3b8', marginTop: 2 }}>Điểm danh chỉ khả dụng đúng ngày có lịch học.</div></div>
               </div>
             )}
             {attLockStatus === 'not-started' && (
               <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#fef9c3', border: '1px solid #fde68a', color: '#92400e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.3em' }}>⏳</span>
-                <div>
-                  <div>Chưa đến giờ bắt đầu slot.</div>
-                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ điểm danh sẽ mở khi đến giờ slot và đóng sau {ATTENDANCE_WINDOW} phút.</div>
-                </div>
+                <div><div>Chưa đến giờ bắt đầu slot.</div><div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ điểm danh sẽ mở khi đến giờ slot và đóng sau {ATTENDANCE_WINDOW} phút.</div></div>
               </div>
             )}
             {attLockStatus === 'locked' && (
               <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.3em' }}>🔒</span>
-                <div>
-                  <div>Đã khoá điểm danh.</div>
-                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ {ATTENDANCE_WINDOW} phút đã qua. Liên hệ admin nếu cần chỉnh sửa.</div>
-                </div>
+                <div><div>Đã khoá điểm danh.</div><div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ {ATTENDANCE_WINDOW} phút đã qua. Liên hệ admin nếu cần chỉnh sửa.</div></div>
               </div>
             )}
             {attLockStatus === 'open' && (
               <div style={{ padding: '14px 18px', borderRadius: 8, marginBottom: 14, background: '#dcfce7', border: '1px solid #86efac', color: '#14532d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.3em' }}>✅</span>
-                <div>
-                  <div>Đang trong cửa sổ điểm danh hôm nay ({new Date(todayISO).toLocaleDateString('vi-VN')}).</div>
-                  <div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ sẽ đóng sau {ATTENDANCE_WINDOW} phút kể từ giờ bắt đầu slot.</div>
-                </div>
+                <div><div>Đang trong cửa sổ điểm danh hôm nay ({new Date(todayISO).toLocaleDateString('vi-VN')}).</div><div style={{ fontSize: '0.85em', fontWeight: 400, marginTop: 2 }}>Cửa sổ sẽ đóng sau {ATTENDANCE_WINDOW} phút kể từ giờ bắt đầu slot.</div></div>
               </div>
             )}
 
-            {/* Toolbar — chỉ hiện khi open */}
             <div style={{ background: '#fff8f0', border: '1px solid #ffd8a8', borderRadius: 8, padding: '14px 16px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <label style={{ fontWeight: 600, color: '#555', fontSize: '0.9em' }}>📅 Ngày điểm danh</label>
@@ -414,37 +353,20 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                 </div>
               </div>
               <button style={{ padding: '9px 14px', background: '#3498db', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={loadAttendance}>🔍 Tải danh sách</button>
-              <button
-                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#27ae60' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
-                onClick={attLockStatus === 'open' ? saveAttendance : undefined}
-                disabled={attLockStatus !== 'open'}
-                title={attLockStatus !== 'open' ? 'Chỉ được lưu điểm danh trong cửa sổ 30 phút' : ''}
-              >💾 Lưu điểm danh</button>
-              <button
-                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
-                onClick={attLockStatus === 'open' ? () => checkAll(true) : undefined}
-                disabled={attLockStatus !== 'open'}
-              >✔ Tất cả có mặt</button>
-              <button
-                style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
-                onClick={attLockStatus === 'open' ? () => checkAll(false) : undefined}
-                disabled={attLockStatus !== 'open'}
-              >✘ Tất cả vắng</button>
+              <button style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#27ae60' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }} onClick={attLockStatus === 'open' ? saveAttendance : undefined} disabled={attLockStatus !== 'open'}>💾 Lưu điểm danh</button>
+              <button style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }} onClick={attLockStatus === 'open' ? () => checkAll(true) : undefined} disabled={attLockStatus !== 'open'}>✔ Tất cả có mặt</button>
+              <button style={{ padding: '9px 14px', background: attLockStatus === 'open' ? '#95a5a6' : '#9ca3af', color: 'white', border: 'none', borderRadius: 6, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }} onClick={attLockStatus === 'open' ? () => checkAll(false) : undefined} disabled={attLockStatus !== 'open'}>✘ Tất cả vắng</button>
             </div>
 
-            {/* Stats */}
             {attLoaded && attStudents.length > 0 && (
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                 <div style={{ padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', background: '#d4edda', color: '#155724' }}>✅ Có mặt: {presentCount}</div>
                 <div style={{ padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', background: '#f8d7da', color: '#721c24' }}>❌ Vắng: {absentCount}</div>
                 <div style={{ padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', background: '#e8f4fd', color: '#1a5276' }}>👥 Tổng: {attStudents.length}</div>
-                <div style={{ padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', background: '#f5f5f5', color: '#555' }}>
-                  📊 {attStudents.length > 0 ? Math.round(presentCount / attStudents.length * 100) : 0}% có mặt
-                </div>
+                <div style={{ padding: '10px 18px', borderRadius: 8, fontWeight: 'bold', background: '#f5f5f5', color: '#555' }}>📊 {attStudents.length > 0 ? Math.round(presentCount / attStudents.length * 100) : 0}% có mặt</div>
               </div>
             )}
 
-            {/* Table */}
             {!attLoaded ? (
               <p style={{ textAlign: 'center', color: '#aaa', padding: '30px 0' }}>Chọn ngày và nhấn "Tải danh sách".</p>
             ) : !attStudents.length ? (
@@ -467,13 +389,7 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                       <td style={{ ...tdStyle, color: '#666' }}>{s.email || '—'}</td>
                       <td style={{ ...tdStyle, textAlign: 'center' }}>
                         <label style={{ cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <input
-                            type="checkbox"
-                            checked={attMap[s.studentId] ?? false}
-                            onChange={e => attLockStatus === 'open' && setAttMap(prev => ({ ...prev, [s.studentId]: e.target.checked }))}
-                            disabled={attLockStatus !== 'open'}
-                            style={{ width: 18, height: 18, cursor: attLockStatus === 'open' ? 'pointer' : 'not-allowed' }}
-                          />
+                          <input type="checkbox" checked={attMap[s.studentId] ?? false} onChange={e => attLockStatus === 'open' && setAttMap(prev => ({ ...prev, [s.studentId]: e.target.checked }))} disabled={attLockStatus !== 'open'} style={{ width: 18, height: 18 }} />
                           <span>{attMap[s.studentId] ? '✅' : '❌'}</span>
                         </label>
                       </td>
@@ -494,30 +410,14 @@ export default function ClassModal({ classInfo, onClose }: Props) {
               <input type="month" value={histMonth} onChange={e => setHistMonth(e.target.value)} style={{ padding: 8, border: '1px solid #ddd', borderRadius: 6, fontSize: '0.95em' }} />
               <button style={{ padding: '8px 14px', background: '#3498db', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }} onClick={loadHistory}>🔍 Xem</button>
             </div>
-
             {histLoading && <p style={{ textAlign: 'center', color: '#777' }}>Đang tải...</p>}
-
-            {!histLoading && !histData && (
-              <p style={{ textAlign: 'center', color: '#aaa', padding: 20 }}>Chọn tháng để xem lịch sử điểm danh.</p>
-            )}
-
-            {histData && !histData.dayData.length && (
-              <p style={{ textAlign: 'center', color: '#aaa', padding: 20 }}>Chưa có dữ liệu điểm danh trong tháng này.</p>
-            )}
-
+            {!histLoading && !histData && <p style={{ textAlign: 'center', color: '#aaa', padding: 20 }}>Chọn tháng để xem lịch sử điểm danh.</p>}
+            {histData && !histData.dayData.length && <p style={{ textAlign: 'center', color: '#aaa', padding: 20 }}>Chưa có dữ liệu điểm danh trong tháng này.</p>}
             {histData && histData.dayData.length > 0 && (
               <>
                 <h4 style={{ color: '#c0392b', marginBottom: 12 }}>📊 Tổng hợp tháng {histData.month}/{histData.year}</h4>
-                <p style={{ color: '#666', marginBottom: 12 }}>Số buổi đã điểm danh: <strong>{histData.dayData.length}</strong></p>
-
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
-                  <thead>
-                    <tr>
-                      {['#', 'Học sinh', '✅ Có mặt', '❌ Vắng', '📊 Tỉ lệ'].map((h, i) => (
-                        <th key={h} style={{ ...thStyle, textAlign: i > 1 ? 'center' : 'left' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
+                  <thead><tr>{['#', 'Học sinh', '✅ Có mặt', '❌ Vắng', '📊 Tỉ lệ'].map((h, i) => <th key={h} style={{ ...thStyle, textAlign: i > 1 ? 'center' : 'left' }}>{h}</th>)}</tr></thead>
                   <tbody>
                     {Object.entries(histData.studentMap).map(([id, s]: [string, any], i) => {
                       const total = s.present + s.absent;
@@ -530,62 +430,14 @@ export default function ClassModal({ classInfo, onClose }: Props) {
                           <td style={tdStyle}><strong>{s.name}</strong></td>
                           <td style={{ ...tdStyle, textAlign: 'center', color: '#155724', fontWeight: 'bold' }}>{s.present}</td>
                           <td style={{ ...tdStyle, textAlign: 'center', color: '#721c24', fontWeight: 'bold' }}>{s.absent}</td>
-                          <td style={{ ...tdStyle, textAlign: 'center' }}>
-                            <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 12, fontWeight: 'bold' }}>{pct}%</span>
-                          </td>
+                          <td style={{ ...tdStyle, textAlign: 'center' }}><span style={{ background: bg, color, padding: '3px 10px', borderRadius: 12, fontWeight: 'bold' }}>{pct}%</span></td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-
-                <h4 style={{ color: '#c0392b', margin: '20px 0 12px' }}>📅 Chi tiết từng buổi</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      {['Ngày', '✅ Có mặt', '❌ Vắng', 'Hành động'].map((h, i) => (
-                        <th key={h} style={{ ...thStyle, textAlign: i > 0 && i < 3 ? 'center' : 'left' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {histData.dayData.map((d: any) => (
-                      <tr key={d.day}>
-                        <td style={tdStyle}>{String(d.day).padStart(2, '0')}/{String(histData.month).padStart(2, '0')}/{histData.year}</td>
-                        <td style={{ ...tdStyle, textAlign: 'center', color: '#155724', fontWeight: 'bold' }}>{d.presentCount}</td>
-                        <td style={{ ...tdStyle, textAlign: 'center', color: '#721c24', fontWeight: 'bold' }}>{d.absentCount}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: '0.85em', color: '#94a3b8' }}>—</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </>
             )}
-          </div>
-        )}
-
-        {/* ── Tab: Edit ── */}
-        {tab === 'edit' && (
-          <div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontWeight: 600, color: '#555', marginTop: 14 }}>Tên lớp</label>
-              <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Tên lớp" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: '1em' }} />
-
-              <label style={{ fontWeight: 600, color: '#555', marginTop: 14 }}>Lịch học</label>
-              <input type="text" value={editSchedule} onChange={e => setEditSchedule(e.target.value)} placeholder="Ví dụ: Thứ 2,4 - 7:30-9:00" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: '1em' }} />
-
-              <label style={{ fontWeight: 600, color: '#555', marginTop: 14 }}>Ngày bắt đầu</label>
-              <input type="datetime-local" value={editStartDate} onChange={e => setEditStartDate(e.target.value)} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: '1em' }} />
-
-              <div style={{ marginTop: 16 }}>
-                <button style={{ padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '1em' }} onClick={saveEdit}>
-                  💾 Lưu thay đổi
-                </button>
-              </div>
-              {editMsg && <Msg {...editMsg} />}
-            </div>
           </div>
         )}
       </div>

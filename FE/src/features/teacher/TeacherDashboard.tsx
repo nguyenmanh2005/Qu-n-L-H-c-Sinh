@@ -6,10 +6,11 @@ import TeacherInfoCard from './components/TeacherInfoCard';
 import ClassesTab from './components/ClassesTab';
 import ScheduleTab from './components/ScheduleTab';
 import RestoreRequestsTab from './components/RestoreRequestsTab';
+import GradesTab from './components/GradesTab';  // ← THÊM MỚI
 import ClassModal from './components/ClassModal';
 import { useAuthStore } from '@/store/authStore';
 
-type Tab = 'classes' | 'schedule' | 'restore';
+type Tab = 'classes' | 'schedule' | 'restore' | 'grades';  // ← THÊM 'grades'
 
 export interface ClassInfo {
   id: number;
@@ -80,9 +81,10 @@ export default function TeacherDashboard() {
   if (loading) return <div style={{ textAlign: 'center', padding: '80px 0', color: '#777' }}>Đang tải...</div>;
 
   const tabConfig: { key: Tab; label: string }[] = [
-    { key: 'classes', label: '🏫 Lớp học' },
+    { key: 'classes',  label: '🏫 Lớp học' },
     { key: 'schedule', label: '📅 Lịch học' },
-    { key: 'restore', label: '📬 Đơn khôi phục' },
+    { key: 'grades',   label: '📊 Xem điểm' },   // ← THÊM MỚI
+    { key: 'restore',  label: '📬 Đơn khôi phục' },
   ];
 
   return (
@@ -129,6 +131,9 @@ export default function TeacherDashboard() {
         {activeTab === 'schedule' && (
           <ScheduleTab allClasses={allClasses} openModal={setModalClass} />
         )}
+        {activeTab === 'grades' && (
+          <GradesTab allClasses={allClasses} />   // ← THÊM MỚI
+        )}
         {activeTab === 'restore' && <RestoreRequestsTab />}
 
         {/* ── Modal ── */}
@@ -139,9 +144,6 @@ export default function TeacherDashboard() {
           />
         )}
 
-        <footer style={{ textAlign: 'center', marginTop: 40, color: '#777', fontSize: '0.9em' }}>
-          © 2026 Student Management System
-        </footer>
       </div>
     </div>
   );

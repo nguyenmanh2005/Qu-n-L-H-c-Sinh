@@ -15,7 +15,7 @@ namespace StudentManagement.Controllers;
 [Route("api/[controller]")]
 public class AdminController : ControllerBase
 {
-    private readonly IAdminUserService _userService;
+    private readonly IAdminUserService  _userService;
     private readonly IAdminClassService _classService;
 
     public AdminController(IAdminUserService userService, IAdminClassService classService)
@@ -26,10 +26,6 @@ public class AdminController : ControllerBase
 
     // ── SLOT DEFINITIONS ────────────────────────────────────────────────
 
-    /// <summary>
-    /// Trả về danh sách 7 slot học cố định.
-    /// Frontend dùng endpoint này để hiển thị dropdown chọn slot.
-    /// </summary>
     [HttpGet("slots")]
     public IActionResult GetSlots()
     {
@@ -113,15 +109,9 @@ public class AdminController : ControllerBase
         return result.Success ? Ok(result.Message) : BadRequest(result.Message);
     }
 
-    /// <summary>
-    /// Cập nhật lịch học cho lớp.
-    /// Admin có thể truyền SlotNumber (1–7) thay vì nhập giờ thủ công.
-    /// Ví dụ body: { "slotNumber": 2, "schedule": "Thứ 2, Thứ 4 – P.A101", "startDate": "2025-09-01" }
-    /// </summary>
     [HttpPut("classes/{classId}/schedule")]
     public async Task<IActionResult> UpdateSchedule(int classId, [FromBody] UpdateScheduleDto dto, [FromServices] AppDbContext context)
     {
-        // Validate slot nếu được cung cấp
         if (dto.SlotNumber.HasValue && !SlotDefinition.IsValid(dto.SlotNumber.Value))
             return BadRequest($"SlotNumber không hợp lệ. Giá trị hợp lệ: 1–{SlotDefinition.All.Count}.");
 
@@ -142,7 +132,8 @@ public class AdminController : ControllerBase
         var result = await _classService.RemoveEnrollmentAsync(enrollmentId, context);
         return result.Success ? Ok(result.Message) : BadRequest(result.Message);
     }
-        // ── ATTENDANCE MANAGEMENT (Admin không bị giới hạn ngày) ────────────────
+
+    // ── ATTENDANCE MANAGEMENT ────────────────────────────────────────────
 
     [HttpGet("classes/{classId}/attendance")]
     public async Task<IActionResult> GetAttendance(
@@ -155,7 +146,6 @@ public class AdminController : ControllerBase
         if (cls == null) return NotFound("Không tìm thấy lớp");
 
         var targetDate = (date ?? DateTime.Now).Date;
-        var dayStart   = targetDate;
         var dayEnd     = targetDate.AddDays(1);
 
         var enrollments = context.Set<Enrollment>()
@@ -163,7 +153,7 @@ public class AdminController : ControllerBase
             .ToList();
 
         var atts = context.Set<Attendance>()
-            .Where(a => a.ClassId == classId && a.Date >= dayStart && a.Date < dayEnd)
+            .Where(a => a.ClassId == classId && a.Date >= targetDate && a.Date < dayEnd)
             .ToList();
 
         var result = new List<object>();
@@ -173,11 +163,11 @@ public class AdminController : ControllerBase
             var att  = atts.FirstOrDefault(a => a.StudentId == e.StudentId);
             result.Add(new
             {
-                studentId   = e.StudentId,
-                studentName = user?.FullName ?? user?.UserName ?? "Không rõ",
+                studentId    = e.StudentId,
+                studentName  = user?.FullName ?? user?.UserName ?? "Không rõ",
                 studentEmail = user?.Email,
                 attendanceId = att?.Id,
-                present     = att?.Present ?? false,
+                present      = att?.Present ?? false,
             });
         }
 
@@ -194,20 +184,16 @@ public class AdminController : ControllerBase
         if (cls == null) return NotFound("Không tìm thấy lớp");
 
         var targetDate = dto.Date.Date;
-        var dayStart   = targetDate;
         var dayEnd     = targetDate.AddDays(1);
 
         foreach (var entry in dto.Entries)
         {
             var existing = context.Set<Attendance>()
                 .FirstOrDefault(a => a.ClassId == classId && a.StudentId == entry.StudentId
-                                  && a.Date >= dayStart && a.Date < dayEnd);
+                                  && a.Date >= targetDate && a.Date < dayEnd);
             if (existing != null)
-            {
                 existing.Present = entry.Present;
-            }
             else
-            {
                 context.Set<Attendance>().Add(new Attendance
                 {
                     StudentId        = entry.StudentId,
@@ -216,7 +202,6 @@ public class AdminController : ControllerBase
                     Present          = entry.Present,
                     RestoreRequested = false,
                 });
-            }
         }
 
         await context.SaveChangesAsync();

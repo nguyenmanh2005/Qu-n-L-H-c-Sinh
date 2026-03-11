@@ -12,8 +12,8 @@ using StudentManagement.Data;
 namespace StudentManagement.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260310023313_UpdateModel")]
-    partial class UpdateModel
+    [Migration("20260310042943_AddMissingTables")]
+    partial class AddMissingTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -156,6 +156,44 @@ namespace StudentManagement.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("StudentManagement.Entities.Assignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("OpenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TeacherId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
+
+                    b.ToTable("Assignments");
                 });
 
             modelBuilder.Entity("StudentManagement.Entities.Attendance", b =>
@@ -310,7 +348,7 @@ namespace StudentManagement.Migrations
                     b.ToTable("Students");
                 });
 
-            modelBuilder.Entity("StudentManagement.Entities.Teacher", b =>
+            modelBuilder.Entity("StudentManagement.Entities.Submission", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -318,9 +356,53 @@ namespace StudentManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ClassCount")
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Feedback")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("GradedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GradedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("Score")
+                        .HasColumnType("float");
+
+                    b.Property<string>("StudentId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId");
+
+                    b.ToTable("Submissions");
+                });
+
+            modelBuilder.Entity("StudentManagement.Entities.Teacher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -454,6 +536,17 @@ namespace StudentManagement.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("StudentManagement.Entities.Assignment", b =>
+                {
+                    b.HasOne("StudentManagement.Entities.Class", "Class")
+                        .WithMany()
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+                });
+
             modelBuilder.Entity("StudentManagement.Entities.Class", b =>
                 {
                     b.HasOne("StudentManagement.Entities.User", "Teacher")
@@ -480,6 +573,17 @@ namespace StudentManagement.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("StudentManagement.Entities.Submission", b =>
+                {
+                    b.HasOne("StudentManagement.Entities.Assignment", "Assignment")
+                        .WithMany()
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
                 });
 
             modelBuilder.Entity("StudentManagement.Entities.Class", b =>

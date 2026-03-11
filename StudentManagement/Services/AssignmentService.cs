@@ -9,7 +9,7 @@ namespace StudentManagement.Services;
 
 public class AssignmentService : IAssignmentService
 {
-    private readonly AppDbContext    _context;
+    private readonly AppDbContext      _context;
     private readonly UserManager<User> _userManager;
 
     public AssignmentService(AppDbContext context, UserManager<User> userManager)
@@ -18,7 +18,8 @@ public class AssignmentService : IAssignmentService
         _userManager = userManager;
     }
 
-    // ── HELPER ───────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private async Task<AssignmentDto> ToDto(Assignment a)
     {
         var teacher = await _userManager.FindByIdAsync(a.TeacherId);
@@ -26,54 +27,72 @@ public class AssignmentService : IAssignmentService
         var now     = DateTime.Now;
         return new AssignmentDto
         {
-            Id               = a.Id,
-            Title            = a.Title,
-            Description      = a.Description,
-            ClassId          = a.ClassId,
-            ClassName        = cls?.Name ?? "",
-            TeacherId        = a.TeacherId,
-            TeacherName      = teacher?.FullName ?? teacher?.UserName,
-            OpenAt           = a.OpenAt,
-            DueAt            = a.DueAt,
-            CreatedAt        = a.CreatedAt,
-            IsOpen           = now >= a.OpenAt && now <= a.DueAt,
-            IsExpired        = now > a.DueAt,
-            SubmissionCount  = _context.Submissions.Count(s => s.AssignmentId == a.Id)
+            Id              = a.Id,
+            Title           = a.Title,
+            Description     = a.Description,
+            ClassId         = a.ClassId,
+            ClassName       = cls?.Name ?? "",
+            TeacherId       = a.TeacherId,
+            TeacherName     = teacher?.FullName ?? teacher?.UserName,
+            OpenAt          = a.OpenAt,
+            DueAt           = a.DueAt,
+            CreatedAt       = a.CreatedAt,
+            IsOpen          = now >= a.OpenAt && now <= a.DueAt,
+            IsExpired       = now > a.DueAt,
+            SubmissionCount = _context.Submissions.Count(s => s.AssignmentId == a.Id),
         };
     }
 
-    // Helper chuyển Submission → SubmissionDto (khi teacher xem danh sách bài nộp)
     private async Task<SubmissionDto> ToSubmissionDto(Submission s)
     {
         var student    = await _userManager.FindByIdAsync(s.StudentId);
         var assignment = await _context.Assignments.FindAsync(s.AssignmentId);
         return new SubmissionDto
         {
-            Id               = s.Id,
-            AssignmentId     = s.AssignmentId,
-            AssignmentTitle  = assignment?.Title ?? "",
-            StudentId        = s.StudentId,
-            StudentName      = student?.FullName ?? student?.UserName,
-            StudentEmail     = student?.Email,
-            FileName         = s.FileName,
-            SubmittedAt      = s.SubmittedAt,
-            IsLate           = s.IsLate,
-            Score            = s.Score,
-            Feedback         = s.Feedback,
-            GradedAt         = s.GradedAt,
-            IsGraded         = s.Score.HasValue
+            Id              = s.Id,
+            AssignmentId    = s.AssignmentId,
+            AssignmentTitle = assignment?.Title ?? "",
+            StudentId       = s.StudentId,
+            StudentName     = student?.FullName ?? student?.UserName,
+            StudentEmail    = student?.Email,
+            FileName        = s.FileName,
+            SubmittedAt     = s.SubmittedAt,
+            IsLate          = s.IsLate,
+            Score           = s.Score,
+            Feedback        = s.Feedback,
+            GradedAt        = s.GradedAt,
+            IsGraded        = s.Score.HasValue,
         };
     }
 
-    // ── TEACHER: Tạo bài tập ─────────────────────────────────────
+    private async Task<MySubmissionDto> ToMySubmissionDto(Submission s, Assignment a)
+    {
+        var cls = await _context.Classes.FindAsync(a.ClassId);
+        return new MySubmissionDto
+        {
+            Id              = s.Id,
+            AssignmentId    = a.Id,
+            AssignmentTitle = a.Title,
+            ClassName       = cls?.Name ?? "",
+            DueAt           = a.DueAt,
+            FileName        = s.FileName,
+            SubmittedAt     = s.SubmittedAt,
+            IsLate          = s.IsLate,
+            Score           = s.Score,
+            Feedback        = s.Feedback,
+            GradedAt        = s.GradedAt,
+            CanEdit         = DateTime.Now <= a.DueAt,
+        };
+    }
+
+    // ── Teacher ───────────────────────────────────────────────────────────────
+
     public async Task<AssignmentDto> CreateAsync(string teacherId, CreateAssignmentDto dto)
     {
-        // Kiểm tra lớp có thuộc về teacher này không
         var cls = await _context.Classes.FindAsync(dto.ClassId)
             ?? throw new KeyNotFoundException("Không tìm thấy lớp");
         if (cls.TeacherId != teacherId)
             throw new UnauthorizedAccessException("Bạn không phụ trách lớp này");
-
         if (dto.DueAt <= dto.OpenAt)
             throw new InvalidOperationException("Hạn nộp phải sau giờ mở");
 
@@ -85,7 +104,7 @@ public class AssignmentService : IAssignmentService
             TeacherId   = teacherId,
             OpenAt      = dto.OpenAt,
             DueAt       = dto.DueAt,
-            CreatedAt   = DateTime.Now
+            CreatedAt   = DateTime.Now,
         };
 
         _context.Assignments.Add(assignment);
@@ -93,7 +112,6 @@ public class AssignmentService : IAssignmentService
         return await ToDto(assignment);
     }
 
-    // ── TEACHER: Sửa bài tập ─────────────────────────────────────
     public async Task<AssignmentDto> UpdateAsync(string teacherId, int assignmentId, UpdateAssignmentDto dto)
     {
         var assignment = await _context.Assignments.FindAsync(assignmentId)
@@ -113,7 +131,6 @@ public class AssignmentService : IAssignmentService
         return await ToDto(assignment);
     }
 
-    // ── TEACHER: Xóa bài tập ─────────────────────────────────────
     public async Task DeleteAsync(string teacherId, int assignmentId)
     {
         var assignment = await _context.Assignments.FindAsync(assignmentId)
@@ -121,14 +138,12 @@ public class AssignmentService : IAssignmentService
         if (assignment.TeacherId != teacherId)
             throw new UnauthorizedAccessException();
 
-        // Xóa cả các submission liên quan
         var submissions = _context.Submissions.Where(s => s.AssignmentId == assignmentId);
         _context.Submissions.RemoveRange(submissions);
         _context.Assignments.Remove(assignment);
         await _context.SaveChangesAsync();
     }
 
-    // ── TEACHER: Xem bài tập mình tạo ───────────────────────────
     public async Task<List<AssignmentDto>> GetByTeacherAsync(string teacherId)
     {
         var assignments = await _context.Assignments
@@ -142,7 +157,6 @@ public class AssignmentService : IAssignmentService
         return result;
     }
 
-    // ── TEACHER: Xem danh sách bài nộp ──────────────────────────
     public async Task<List<SubmissionDto>> GetSubmissionsAsync(string teacherId, int assignmentId)
     {
         var assignment = await _context.Assignments.FindAsync(assignmentId)
@@ -161,7 +175,6 @@ public class AssignmentService : IAssignmentService
         return result;
     }
 
-    // ── TEACHER: Chấm điểm ──────────────────────────────────────
     public async Task GradeAsync(string teacherId, int submissionId, GradeSubmissionDto dto)
     {
         var submission = await _context.Submissions
@@ -179,10 +192,10 @@ public class AssignmentService : IAssignmentService
         await _context.SaveChangesAsync();
     }
 
-    // ── STUDENT: Xem bài tập của lớp mình ───────────────────────
+    // ── Student ───────────────────────────────────────────────────────────────
+
     public async Task<List<AssignmentDto>> GetForStudentAsync(string studentId)
     {
-        // Lấy các classId học sinh đang học (Approved)
         var classIds = await _context.Set<Enrollment>()
             .Where(e => e.StudentId == studentId && e.Status == "Approved")
             .Select(e => e.ClassId)
@@ -199,21 +212,17 @@ public class AssignmentService : IAssignmentService
         return result;
     }
 
-    // ── STUDENT: Nộp bài ────────────────────────────────────────
     public async Task<MySubmissionDto> SubmitAsync(string studentId, int assignmentId, string fileName, string filePath)
     {
         var assignment = await _context.Assignments.FindAsync(assignmentId)
             ?? throw new KeyNotFoundException("Không tìm thấy bài tập");
 
         var now = DateTime.Now;
-
-        // Kiểm tra còn trong thời gian mở không
         if (now < assignment.OpenAt)
             throw new InvalidOperationException("Bài tập chưa mở nộp");
         if (now > assignment.DueAt)
             throw new InvalidOperationException("Đã quá hạn nộp bài");
 
-        // Kiểm tra đã nộp chưa
         var existing = await _context.Submissions
             .FirstOrDefaultAsync(s => s.AssignmentId == assignmentId && s.StudentId == studentId);
         if (existing != null)
@@ -226,7 +235,7 @@ public class AssignmentService : IAssignmentService
             FileName     = fileName,
             FilePath     = filePath,
             SubmittedAt  = now,
-            IsLate       = now > assignment.DueAt
+            IsLate       = now > assignment.DueAt,
         };
 
         _context.Submissions.Add(submission);
@@ -234,7 +243,6 @@ public class AssignmentService : IAssignmentService
         return await ToMySubmissionDto(submission, assignment);
     }
 
-    // ── STUDENT: Sửa bài (chỉ được khi chưa hết giờ) ───────────
     public async Task<MySubmissionDto> UpdateSubmissionAsync(string studentId, int submissionId, string fileName, string filePath)
     {
         var submission = await _context.Submissions
@@ -244,15 +252,13 @@ public class AssignmentService : IAssignmentService
 
         if (submission.StudentId != studentId)
             throw new UnauthorizedAccessException();
-
         if (DateTime.Now > submission.Assignment!.DueAt)
             throw new InvalidOperationException("Đã quá hạn, không thể sửa bài");
 
-        // Xóa file cũ nếu cần (xử lý ở Controller)
         submission.FileName    = fileName;
         submission.FilePath    = filePath;
         submission.SubmittedAt = DateTime.Now;
-        submission.Score       = null;  // reset điểm khi nộp lại
+        submission.Score       = null;
         submission.GradedAt    = null;
         submission.GradedBy    = null;
         submission.Feedback    = null;
@@ -261,7 +267,6 @@ public class AssignmentService : IAssignmentService
         return await ToMySubmissionDto(submission, submission.Assignment);
     }
 
-    // ── STUDENT: Xem bài đã nộp + điểm ─────────────────────────
     public async Task<List<MySubmissionDto>> GetMySubmissionsAsync(string studentId)
     {
         var submissions = await _context.Submissions
@@ -276,27 +281,8 @@ public class AssignmentService : IAssignmentService
         return result;
     }
 
-    private async Task<MySubmissionDto> ToMySubmissionDto(Submission s, Assignment a)
-    {
-        var cls = await _context.Classes.FindAsync(a.ClassId);
-        return new MySubmissionDto
-        {
-            Id              = s.Id,
-            AssignmentId    = a.Id,
-            AssignmentTitle = a.Title,
-            ClassName       = cls?.Name ?? "",
-            DueAt           = a.DueAt,
-            FileName        = s.FileName,
-            SubmittedAt     = s.SubmittedAt,
-            IsLate          = s.IsLate,
-            Score           = s.Score,
-            Feedback        = s.Feedback,
-            GradedAt        = s.GradedAt,
-            CanEdit         = DateTime.Now <= a.DueAt  // còn trong hạn → được sửa
-        };
-    }
+    // ── Admin ─────────────────────────────────────────────────────────────────
 
-    // ── ADMIN ────────────────────────────────────────────────────
     public async Task<List<AssignmentDto>> GetAllAsync()
     {
         var assignments = await _context.Assignments
@@ -325,12 +311,26 @@ public class AssignmentService : IAssignmentService
         return result;
     }
 
+    public async Task AdminGradeAsync(int submissionId, string graderId, GradeSubmissionDto dto)
+    {
+        var submission = await _context.Submissions.FindAsync(submissionId)
+            ?? throw new KeyNotFoundException("Không tìm thấy bài nộp");
+
+        if (dto.Score < 0 || dto.Score > 10)
+            throw new InvalidOperationException("Điểm phải từ 0 đến 10");
+
+        submission.Score    = dto.Score;
+        submission.Feedback = dto.Feedback?.Trim();
+        submission.GradedAt = DateTime.Now;
+        submission.GradedBy = graderId;
+        await _context.SaveChangesAsync();
+    }
+
     public async Task AdminDeleteSubmissionAsync(int submissionId)
     {
         var submission = await _context.Submissions.FindAsync(submissionId)
             ?? throw new KeyNotFoundException("Không tìm thấy bài nộp");
 
-        // Xóa file vật lý sẽ xử lý ở Controller
         _context.Submissions.Remove(submission);
         await _context.SaveChangesAsync();
     }

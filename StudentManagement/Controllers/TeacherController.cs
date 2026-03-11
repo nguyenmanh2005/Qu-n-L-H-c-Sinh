@@ -18,33 +18,34 @@ public class TeacherController : ControllerBase
         _teacherService = teacherService;
     }
 
-    // Helper lấy userId từ JWT
     private string UserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     // ── Profile ──────────────────────────────────────────────────
-[HttpGet("profile")]
-public async Task<IActionResult> GetProfile()
-{
-    try
-    {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return Unauthorized();
 
-        var profile = await _teacherService.GetProfileAsync(userId);
-        return profile == null ? NotFound("Không tìm thấy") : Ok(profile);
-    }
-    catch (Exception ex)
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
     {
-        // Trả lỗi chi tiết ra FE tạm thời để debug
-        return StatusCode(500, new { 
-            message = ex.Message, 
-            inner   = ex.InnerException?.Message,
-            stack   = ex.StackTrace 
-        });
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
+
+            var profile = await _teacherService.GetProfileAsync(userId);
+            return profile == null ? NotFound("Không tìm thấy") : Ok(profile);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                message = ex.Message,
+                inner   = ex.InnerException?.Message,
+                stack   = ex.StackTrace
+            });
+        }
     }
-}
 
     // ── Lớp học ──────────────────────────────────────────────────
+
     [HttpGet("classes")]
     public async Task<IActionResult> GetClasses()
     {
@@ -53,10 +54,7 @@ public async Task<IActionResult> GetProfile()
             var classes = await _teacherService.GetClassesAsync(UserId());
             return Ok(classes);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
+        catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
     }
 
     [HttpGet("classes/{classId}/students")]
@@ -84,6 +82,7 @@ public async Task<IActionResult> GetProfile()
     }
 
     // ── Enrollment ───────────────────────────────────────────────
+
     [HttpPost("enrollments/{enrollmentId}/approve")]
     public async Task<IActionResult> ApproveEnrollment(int enrollmentId)
     {
@@ -112,6 +111,7 @@ public async Task<IActionResult> GetProfile()
     public IActionResult GetPendingRequests() => Ok(new List<object>());
 
     // ── Điểm danh ────────────────────────────────────────────────
+
     [HttpGet("classes/{classId}/attendance")]
     public async Task<IActionResult> GetAttendance(int classId, [FromQuery] DateTime? date)
     {
@@ -135,6 +135,7 @@ public async Task<IActionResult> GetProfile()
     }
 
     // ── Restore requests ─────────────────────────────────────────
+
     [HttpGet("attendance/restore-requests")]
     public async Task<IActionResult> GetRestoreRequests()
     {

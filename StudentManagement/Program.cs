@@ -151,32 +151,26 @@ builder.Services.AddCors(options =>
 });
 
 // ================= REPOSITORIES =================
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IClassRepository, ClassRepository>();
+builder.Services.AddScoped<IUserRepository,       UserRepository>();
+builder.Services.AddScoped<IClassRepository,      ClassRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IStudentRepository,    StudentRepository>();
+builder.Services.AddScoped<ITeacherRepository,    TeacherRepository>();
 
 // ================= SERVICES =================
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IAdminUserService, AdminUserService>();
-builder.Services.AddScoped<IAdminClassService, AdminClassService>();
-builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-builder.Services.AddScoped<IStudentService,    StudentService>();
-builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
-builder.Services.AddScoped<ITeacherService, TeacherService>();
-builder.Services.AddScoped<IAssignmentService, AssignmentService>();
-
-
-// Repositories
-builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
-
-// Services
-builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IAuthService,         AuthService>();
+builder.Services.AddScoped<IAdminUserService,    AdminUserService>();
+builder.Services.AddScoped<IAdminClassService,   AdminClassService>();
+builder.Services.AddScoped<IStudentService,      StudentService>();
+builder.Services.AddScoped<ITeacherService,      TeacherService>();
+builder.Services.AddScoped<IAssignmentService,   AssignmentService>();  // ← Assignment
 
 // ================= BUILD =================
 var app = builder.Build();
 
 // ================= MIDDLEWARE =================
 app.UseCors("AllowAll");
+app.UseStaticFiles();   // ← phục vụ file upload (wwwroot/uploads/submissions)
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -189,8 +183,7 @@ app.UseSwaggerUI(c =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers().RequireCors("AllowAll");
-app.UseStaticFiles();
-app.UseStaticFiles();
+
 // ================= SEED ROLES + ADMIN + SCHEMA =================
 using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedAsync(scope.ServiceProvider);
