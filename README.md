@@ -17,3 +17,5 @@ Dự án hệ thống quản lý học sinh/sinh viên sử dụng kiến trúc 
 
 ## Chạy local
 docker-compose up -d
+
+## Dự án gồm 58 API 
